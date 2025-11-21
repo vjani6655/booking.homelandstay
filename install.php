@@ -45,106 +45,101 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $step === 2) {
         $db->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
         
         // Create tables
-        $sql = file_get_contents(__DIR__ . '/api/schema.sql');
-        if ($sql === false) {
-            // If schema.sql doesn't exist, create tables inline
-            $sql = "
-            CREATE TABLE IF NOT EXISTS users (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                username TEXT UNIQUE NOT NULL,
-                password TEXT NOT NULL,
-                name TEXT NOT NULL,
-                created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-            );
+        $sql = "
+        CREATE TABLE IF NOT EXISTS users (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            username TEXT UNIQUE NOT NULL,
+            password TEXT NOT NULL,
+            name TEXT NOT NULL,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        );
 
-            CREATE TABLE IF NOT EXISTS partners (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                name TEXT NOT NULL,
-                contact_person TEXT,
-                email TEXT,
-                phone TEXT,
-                commission_rate REAL DEFAULT 0,
-                created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-            );
+        CREATE TABLE IF NOT EXISTS partners (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT NOT NULL,
+            contact_person TEXT,
+            email TEXT,
+            phone TEXT,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        );
 
-            CREATE TABLE IF NOT EXISTS properties (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                name TEXT NOT NULL,
-                address TEXT,
-                logo TEXT,
-                owner_name TEXT,
-                owner_mobile TEXT,
-                owner_email TEXT,
-                created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-            );
+        CREATE TABLE IF NOT EXISTS properties (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT NOT NULL,
+            address TEXT,
+            logo TEXT,
+            owner_name TEXT,
+            owner_mobile TEXT,
+            owner_email TEXT,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        );
 
-            CREATE TABLE IF NOT EXISTS bookings (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                status TEXT DEFAULT 'Enquiry',
-                property_id INTEGER,
-                partner_id INTEGER,
-                booking_reference TEXT,
-                customer_name TEXT NOT NULL,
-                customer_phone TEXT NOT NULL,
-                customer_email TEXT,
-                check_in_date DATE NOT NULL,
-                check_out_date DATE NOT NULL,
-                num_adults INTEGER DEFAULT 1,
-                extra_adults INTEGER DEFAULT 0,
-                num_kids INTEGER DEFAULT 0,
-                message TEXT,
-                total_amount REAL DEFAULT 0,
-                payment_status TEXT DEFAULT 'Pending',
-                payment_method TEXT,
-                amount_paid REAL DEFAULT 0,
-                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-                updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-                FOREIGN KEY (property_id) REFERENCES properties(id),
-                FOREIGN KEY (partner_id) REFERENCES partners(id)
-            );
+        CREATE TABLE IF NOT EXISTS bookings (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            status TEXT DEFAULT 'Enquiry',
+            property_id INTEGER,
+            partner_id INTEGER,
+            booking_reference TEXT,
+            customer_name TEXT NOT NULL,
+            customer_phone TEXT NOT NULL,
+            customer_email TEXT,
+            check_in_date DATE NOT NULL,
+            check_out_date DATE NOT NULL,
+            num_adults INTEGER DEFAULT 1,
+            extra_adults INTEGER DEFAULT 0,
+            num_kids INTEGER DEFAULT 0,
+            message TEXT,
+            total_amount REAL DEFAULT 0,
+            payment_status TEXT DEFAULT 'Pending',
+            payment_method TEXT,
+            amount_paid REAL DEFAULT 0,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (property_id) REFERENCES properties(id),
+            FOREIGN KEY (partner_id) REFERENCES partners(id)
+        );
 
-            CREATE TABLE IF NOT EXISTS notifications (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                type TEXT NOT NULL,
-                message TEXT NOT NULL,
-                booking_id INTEGER,
-                is_read INTEGER DEFAULT 0,
-                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-                FOREIGN KEY (booking_id) REFERENCES bookings(id)
-            );
+        CREATE TABLE IF NOT EXISTS notifications (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            type TEXT NOT NULL,
+            message TEXT NOT NULL,
+            booking_id INTEGER,
+            is_read INTEGER DEFAULT 0,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (booking_id) REFERENCES bookings(id)
+        );
 
-            CREATE TABLE IF NOT EXISTS ratings (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                booking_id INTEGER NOT NULL,
-                rating INTEGER NOT NULL,
-                review TEXT,
-                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-                FOREIGN KEY (booking_id) REFERENCES bookings(id)
-            );
+        CREATE TABLE IF NOT EXISTS ratings (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            booking_id INTEGER NOT NULL,
+            rating INTEGER NOT NULL,
+            review TEXT,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (booking_id) REFERENCES bookings(id)
+        );
 
-            CREATE TABLE IF NOT EXISTS line_items (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                booking_id INTEGER NOT NULL,
-                description TEXT NOT NULL,
-                amount REAL NOT NULL,
-                type TEXT DEFAULT 'charge',
-                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-                FOREIGN KEY (booking_id) REFERENCES bookings(id)
-            );
-            ";
-        }
+        CREATE TABLE IF NOT EXISTS line_items (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            booking_id INTEGER NOT NULL,
+            description TEXT NOT NULL,
+            amount REAL NOT NULL,
+            type TEXT DEFAULT 'charge',
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (booking_id) REFERENCES bookings(id)
+        );
+        ";
         
         $db->exec($sql);
         
         // Insert default partners
-        $stmt = $db->prepare("INSERT OR IGNORE INTO partners (id, name, commission_rate) VALUES (?, ?, ?)");
+        $stmt = $db->prepare("INSERT OR IGNORE INTO partners (id, name) VALUES (?, ?)");
         $partners = [
-            [1, 'Direct Booking', 0],
-            [6, 'MakeMyTrip', 15],
-            [7, 'Airbnb', 15],
-            [8, 'Booking.com', 15],
-            [9, 'OYO Rooms', 20],
-            [10, 'Goibibo', 15]
+            [1, 'Direct Booking'],
+            [6, 'MakeMyTrip'],
+            [7, 'Airbnb'],
+            [8, 'Booking.com'],
+            [9, 'OYO Rooms'],
+            [10, 'Goibibo']
         ];
         
         foreach ($partners as $partner) {
