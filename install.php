@@ -131,20 +131,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $step === 2) {
         
         $db->exec($sql);
         
-        // Insert default partners
-        $stmt = $db->prepare("INSERT OR IGNORE INTO partners (id, name) VALUES (?, ?)");
-        $partners = [
-            [1, 'Direct Booking'],
-            [6, 'MakeMyTrip'],
-            [7, 'Airbnb'],
-            [8, 'Booking.com'],
-            [9, 'OYO Rooms'],
-            [10, 'Goibibo']
-        ];
-        
-        foreach ($partners as $partner) {
-            $stmt->execute($partner);
-        }
+        // Insert only Direct Booking partner (ID 1)
+        $stmt = $db->prepare("INSERT OR IGNORE INTO partners (id, name, commission) VALUES (?, ?, ?)");
+        $stmt->execute([1, 'Direct Booking', 0]);
         
         // Create admin user
         $username = trim($_POST['username']);

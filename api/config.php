@@ -140,17 +140,6 @@ function initializeDatabase() {
         FOREIGN KEY (booking_id) REFERENCES bookings(id)
     )");
     
-    // Create default admin user if not exists
-    $stmt = $db->prepare("SELECT COUNT(*) as count FROM users WHERE username = ?");
-    $stmt->execute(['admin']);
-    $result = $stmt->fetch();
-    
-    if ($result['count'] == 0) {
-        $hashedPassword = password_hash('admin123', PASSWORD_BCRYPT);
-        $stmt = $db->prepare("INSERT INTO users (username, password, name) VALUES (?, ?, ?)");
-        $stmt->execute(['admin', $hashedPassword, 'Administrator']);
-    }
-    
     // Create default Direct Booking partner with ID 1 if not exists
     $stmt = $db->prepare("SELECT COUNT(*) as count FROM partners WHERE id = 1");
     $stmt->execute();
