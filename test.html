@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>System Test - Homeland Stay</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 20px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .test-section {
+            background: white;
+            padding: 20px;
+            margin-bottom: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .test-result {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+        }
+        .success { background: #d4edda; border: 1px solid #c3e6cb; color: #155724; }
+        .error { background: #f8d7da; border: 1px solid #f5c6cb; color: #721c24; }
+        .info { background: #d1ecf1; border: 1px solid #bee5eb; color: #0c5460; }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover { background: #0056b3; }
+        pre { background: #f8f9fa; padding: 10px; border-radius: 4px; overflow-x: auto; }
+    </style>
+</head>
+<body>
+    <h1>🧪 Homeland Stay System Tests</h1>
+    
+    <div class="test-section">
+        <h2>1. CSRF Token Test</h2>
+        <button onclick="testCSRF()">Test CSRF Endpoint</button>
+        <div id="csrf-result"></div>
+    </div>
+    
+    <div class="test-section">
+        <h2>2. Public Booking Test</h2>
+        <button onclick="testPublicBooking()">Test Public Booking</button>
+        <div id="booking-result"></div>
+    </div>
+    
+    <div class="test-section">
+        <h2>3. Database Integrity Test</h2>
+        <button onclick="testDatabase()">Test Database</button>
+        <div id="db-result"></div>
+    </div>
+    
+    <div class="test-section">
+        <h2>4. File Assets Test</h2>
+        <button onclick="testAssets()">Test Image Assets</button>
+        <div id="assets-result"></div>
+    </div>
+    
+    <div class="test-section">
+        <h2>5. Guest Ratings API Test</h2>
+        <button onclick="testRatingsAPI()">Test Ratings API</button>
+        <div id="ratings-result"></div>
+    </div>
+
+    <script>
+        let csrfToken = '';
+        
+        async function testCSRF() {
+            const result = document.getElementById('csrf-result');
+            result.innerHTML = '<div class="info">Testing CSRF endpoint...</div>';
+            
+            try {
+                const response = await fetch('api/csrf.php');
+                const data = await response.json();
+                
+                if (data.success && data.csrf_token) {
+                    csrfToken = data.csrf_token;
+                    result.innerHTML = `
+                        <div class="success">✅ CSRF token retrieved successfully</div>
+                        <pre>Token: ${data.csrf_token.substring(0, 20)}...</pre>
+                    `;
+                } else {
+                    result.innerHTML = '<div class="error">❌ Failed to get CSRF token</div>';
+                }
+            } catch (error) {
+                result.innerHTML = `<div class="error">❌ Error: ${error.message}</div>`;
+            }
+        }
+        
+        async function testPublicBooking() {
+            const result = document.getElementById('booking-result');
+            result.innerHTML = '<div class="info">Testing public booking endpoint...</div>';
+            
+            if (!csrfToken) {
+                result.innerHTML = '<div class="error">❌ Please run CSRF test first</div>';
+                return;
+            }
+            
+            const testBooking = {
+                customer_name: 'Test User',
+                customer_phone: '9876543210',
+                customer_email: 'test@example.com',
+                check_in_date: '2025-12-01',
+                check_out_date: '2025-12-03',
+                num_adults: 2,
+                num_kids: 0,
+                message: 'Test booking',
+                csrf_token: csrfToken
+            };
+            
+            try {
+                const response = await fetch('api/public_booking.php', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(testBooking)
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    result.innerHTML = `
+                        <div class="success">✅ Public booking endpoint working</div>
+                        <pre>${JSON.stringify(data, null, 2)}</pre>
+                    `;
+                } else {
+                    result.innerHTML = `
+                        <div class="error">❌ Booking failed: ${data.message}</div>
+                        <pre>${JSON.stringify(data, null, 2)}</pre>
+                    `;
+                }
+            } catch (error) {
+                result.innerHTML = `<div class="error">❌ Error: ${error.message}</div>`;
+            }
+        }
+        
+        async function testDatabase() {
+            const result = document.getElementById('db-result');
+            result.innerHTML = '<div class="info">Checking database...</div>';
+            
+            let html = '<div class="success">✅ Database checks completed:</div>';
+            
+            // Check partner
+            try {
+                const response = await fetch('api/partners.php?action=list');
+                const data = await response.json();
+                const hasDirectPartner = data.partners && data.partners.some(p => p.id == 1);
+                
+                if (hasDirectPartner) {
+                    html += '<div class="success">✅ Partner ID 1 (Direct Booking) exists</div>';
+                } else {
+                    html += '<div class="error">❌ Partner ID 1 missing</div>';
+                }
+            } catch (error) {
+                html += `<div class="error">❌ Partner check failed: ${error.message}</div>`;
+            }
+            
+            result.innerHTML = html;
+        }
+        
+        async function testAssets() {
+            const result = document.getElementById('assets-result');
+            result.innerHTML = '<div class="info">Checking image assets...</div>';
+            
+            const images = ['assets/images/Paid.png', 'assets/images/Pending.png'];
+            let html = '';
+            
+            for (const img of images) {
+                const response = await fetch(img);
+                if (response.ok) {
+                    html += `<div class="success">✅ ${img} accessible</div>`;
+                } else {
+                    html += `<div class="error">❌ ${img} not found</div>`;
+                }
+            }
+            
+            result.innerHTML = html;
+        }
+        
+        async function testRatingsAPI() {
+            const result = document.getElementById('ratings-result');
+            result.innerHTML = '<div class="info">Testing ratings API...</div>';
+            
+            try {
+                const response = await fetch('api/ratings.php?action=list');
+                const data = await response.json();
+                
+                if (response.status === 401) {
+                    result.innerHTML = '<div class="info">✅ Ratings API requires authentication (correct behavior)</div>';
+                } else if (data.success !== undefined) {
+                    result.innerHTML = `
+                        <div class="success">✅ Ratings API endpoint exists</div>
+                        <pre>Response: ${JSON.stringify(data, null, 2)}</pre>
+                    `;
+                } else {
+                    result.innerHTML = '<div class="error">❌ Unexpected response from ratings API</div>';
+                }
+            } catch (error) {
+                result.innerHTML = `<div class="error">❌ Error: ${error.message}</div>`;
+            }
+        }
+        
+        // Auto-run tests on load
+        window.onload = () => {
+            console.log('System test page loaded');
+        };
+    </script>
+</body>
+</html>
