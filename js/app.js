@@ -218,7 +218,7 @@ class App {
 
     showConfirm(message, onConfirm, onCancel = null) {
         const modal = document.createElement('div');
-        modal.className = 'modal';
+        modal.className = 'modal active';
         modal.innerHTML = `
             <div class="modal-content" style="max-width: 400px;">
                 <div class="modal-header">
@@ -2902,21 +2902,33 @@ class App {
         // Delete Property buttons
         document.querySelectorAll('.delete-property').forEach(btn => {
             btn.addEventListener('click', async (e) => {
-                const id = e.target.dataset.id;
+                e.preventDefault();
+                e.stopPropagation();
+                const id = parseInt(e.target.dataset.id);
+                
+                if (!id) {
+                    this.showToast('Invalid property ID', 'error');
+                    return;
+                }
                 
                 this.showConfirm('Are you sure you want to delete this property?', async () => {
-                    const response = await fetch('api/properties.php?action=delete', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ id, csrf_token: this.csrfToken })
-                    });
-                    
-                    const result = await response.json();
-                    if (result.success) {
-                        this.showToast('Property deleted successfully!', 'success');
-                        this.loadPage('settings');
-                    } else {
-                        this.showToast(result.message || 'Error deleting property', 'error');
+                    try {
+                        const response = await fetch('api/properties.php?action=delete', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ id: id, csrf_token: this.csrfToken })
+                        });
+                        
+                        const result = await response.json();
+                        if (result.success) {
+                            this.showToast('Property deleted successfully!', 'success');
+                            this.loadPage('settings');
+                        } else {
+                            this.showToast(result.message || 'Error deleting property', 'error');
+                        }
+                    } catch (error) {
+                        console.error('Delete error:', error);
+                        this.showToast('Error deleting property', 'error');
                     }
                 });
             });
@@ -2943,21 +2955,33 @@ class App {
         // Delete Partner buttons
         document.querySelectorAll('.delete-partner').forEach(btn => {
             btn.addEventListener('click', async (e) => {
-                const id = e.target.dataset.id;
+                e.preventDefault();
+                e.stopPropagation();
+                const id = parseInt(e.target.dataset.id);
+                
+                if (!id) {
+                    this.showToast('Invalid partner ID', 'error');
+                    return;
+                }
                 
                 this.showConfirm('Are you sure you want to delete this partner?', async () => {
-                    const response = await fetch(`api/partners.php?action=delete&id=${id}`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ csrf_token: this.csrfToken })
-                    });
-                    
-                    const result = await response.json();
-                    if (result.success) {
-                        this.showToast('Partner deleted successfully!', 'success');
-                        this.loadPage('settings');
-                    } else {
-                        this.showToast(result.message || 'Error deleting partner', 'error');
+                    try {
+                        const response = await fetch('api/partners.php?action=delete', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ id: id, csrf_token: this.csrfToken })
+                        });
+                        
+                        const result = await response.json();
+                        if (result.success) {
+                            this.showToast('Partner deleted successfully!', 'success');
+                            this.loadPage('settings');
+                        } else {
+                            this.showToast(result.message || 'Error deleting partner', 'error');
+                        }
+                    } catch (error) {
+                        console.error('Delete error:', error);
+                        this.showToast('Error deleting partner', 'error');
                     }
                 });
             });

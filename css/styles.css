@@ -95,7 +95,7 @@ body {
         display: flex;
     }
     
-    .hamburger {
+    .header-actions .hamburger {
         display: none;
     }
     

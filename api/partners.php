@@ -101,7 +101,6 @@ switch ($action) {
     case 'delete':
         validateContentType();
         checkRateLimit('partner_delete', 30, 60);
-        $id = $_GET['id'] ?? 0;
         $data = getJsonInput();
         
         // CSRF validation
@@ -109,6 +108,13 @@ switch ($action) {
         if (!verifyCSRFToken($csrfToken)) {
             http_response_code(403);
             echo json_encode(['success' => false, 'message' => 'Invalid CSRF token']);
+            exit;
+        }
+        
+        $id = (int)($data['id'] ?? 0);
+        
+        if ($id <= 0) {
+            echo json_encode(['success' => false, 'message' => 'Invalid partner ID']);
             exit;
         }
         
