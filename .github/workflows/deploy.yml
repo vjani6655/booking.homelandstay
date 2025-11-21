@@ -13,6 +13,20 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+      
+      - name: Create database config file
+        run: |
+          cat > api/db_config.php << 'EOF'
+          <?php
+          return [
+              'host' => '${{ secrets.DB_HOST }}',
+              'port' => '${{ secrets.DB_PORT }}',
+              'database' => '${{ secrets.DB_NAME }}',
+              'username' => '${{ secrets.DB_USER }}',
+              'password' => '${{ secrets.DB_PASS }}',
+              'charset' => 'utf8mb4'
+          ];
+          EOF
         
       - name: Sync files via FTP
         uses: SamKirkland/FTP-Deploy-Action@v4.3.5
