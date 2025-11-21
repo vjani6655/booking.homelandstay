@@ -99,6 +99,7 @@ class App {
                         <a href="#" data-page="bookings" class="nav-link">Bookings</a>
                         <a href="#" data-page="reports" class="nav-link">Reports</a>
                         <a href="#" data-page="settings" class="nav-link">Settings</a>
+                        <a href="db-admin.html" class="nav-link" target="_blank" style="color: var(--warning);">🗄️ DB Admin</a>
                     </nav>
                     <div class="header-actions">
                         <button class="notification-btn" id="notificationBtn">
@@ -126,6 +127,7 @@ class App {
                     <li><a href="#" data-page="bookings">Bookings</a></li>
                     <li><a href="#" data-page="reports">Reports</a></li>
                     <li><a href="#" data-page="settings">Settings</a></li>
+                    <li><a href="db-admin.html" target="_blank" style="color: var(--warning);">🗄️ DB Admin</a></li>
                     <li><a href="#" id="logoutBtn">Logout</a></li>
                 </ul>
             </div>
@@ -421,7 +423,7 @@ class App {
                     <div class="list-card">
                         <div class="list-card-header">
                             <h3 class="list-card-title">${r.customer_name}</h3>
-                            <span class="badge badge-warning">Enquiry</span>
+                            <span class="badge badge-warning">Inquiry</span>
                         </div>
                         <div class="list-card-body">
                             <div class="list-card-row">
@@ -641,6 +643,8 @@ class App {
         const propertiesResponse = await fetch('api/properties.php?action=list');
         const propertiesData = await propertiesResponse.json();
         const properties = propertiesData.success ? propertiesData.properties : [];
+        
+        console.log('Loaded properties:', properties);
 
         const modal = document.createElement('div');
         modal.className = 'modal active';
@@ -655,7 +659,7 @@ class App {
                         <div class="form-group">
                             <label>Booking Status *</label>
                             <select id="bookingStatus" required>
-                                <option value="Enquiry">Enquiry</option>
+                                <option value="Inquiry">Inquiry</option>
                                 <option value="Confirmed">Confirmed</option>
                                 <option value="Cancelled">Cancelled</option>
                                 <option value="Personal">Personal</option>
@@ -693,13 +697,18 @@ class App {
                             </div>
                             <div class="form-group">
                                 <label>Phone *</label>
-                                <input type="tel" id="customerPhone" required>
+                                <input type="tel" id="customerPhone" placeholder="+91 98765 43210 or +1 (555) 123-4567" required>
                             </div>
                         </div>
 
                         <div class="form-group">
-                            <label>Email *</label>
-                            <input type="email" id="customerEmail" required>
+                            <label>Email</label>
+                            <input type="email" id="customerEmail">
+                        </div>
+
+                        <div class="form-group">
+                            <label>State</label>
+                            <input type="text" id="customerState" placeholder="e.g., Maharashtra">
                         </div>
 
                         <div class="form-row">
@@ -717,10 +726,7 @@ class App {
                             <div class="form-group">
                                 <label>Adults *</label>
                                 <input type="number" id="adults" min="1" value="1" required>
-                            </div>
-                            <div class="form-group">
-                                <label>Extra Adults</label>
-                                <input type="number" id="extraAdults" min="0" value="0">
+                                <small class="text-secondary">1 primary + additional extras</small>
                             </div>
                             <div class="form-group">
                                 <label>Kids</label>
@@ -732,6 +738,32 @@ class App {
                             <label>Message</label>
                             <textarea id="message" rows="3"></textarea>
                         </div>
+
+                        <h3 style="margin: 1.5rem 0 1rem; color: var(--primary);">Pricing Details</h3>
+                        
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Per Night Cost (₹)</label>
+                                <input type="number" id="perNightCost" step="0.01" min="0" value="0" placeholder="Auto-filled from property">
+                            </div>
+                            <div class="form-group">
+                                <label>Per Kid Cost (₹)</label>
+                                <input type="number" id="perKidCost" step="0.01" min="0" value="0" placeholder="Auto-filled from property">
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Primary Adult Cost (₹)</label>
+                                <input type="number" id="primaryAdultCost" step="0.01" min="0" value="0" placeholder="For first adult">
+                                <small class="text-secondary">For first adult</small>
+                            </div>
+                            <div class="form-group">
+                                <label>Extra Adult Cost (₹)</label>
+                                <input type="number" id="extraAdultCost" step="0.01" min="0" value="0" placeholder="Per additional adult">
+                                <small class="text-secondary">Per additional adult</small>
+                            </div>
+                        </div>
                     </form>
                 </div>
                 <div class="modal-footer">
@@ -741,6 +773,36 @@ class App {
         `;
 
         document.body.appendChild(modal);
+
+        // Auto-populate pricing when property is selected
+        const propertySelect = document.getElementById('propertyId');
+        propertySelect.addEventListener('change', (e) => {
+            const selectedPropertyId = e.target.value;
+            if (selectedPropertyId) {
+                const property = properties.find(p => p.id == selectedPropertyId);
+                if (property) {
+                    // Parse values as floats to handle decimal numbers correctly
+                    const perDayCost = parseFloat(property.per_day_cost) || 0;
+                    const perAdultCost = parseFloat(property.per_adult_cost) || 0;
+                    const extraAdultCost = parseFloat(property.extra_adult_cost) || 0;
+                    const perKidCost = parseFloat(property.per_kid_cost) || 0;
+                    
+                    document.getElementById('perNightCost').value = perDayCost;
+                    document.getElementById('primaryAdultCost').value = perAdultCost;
+                    document.getElementById('extraAdultCost').value = extraAdultCost;
+                    document.getElementById('perKidCost').value = perKidCost;
+                    
+                    console.log('Auto-populated pricing from property:', {
+                        perDayCost,
+                        perAdultCost,
+                        extraAdultCost,
+                        perKidCost
+                    });
+                } else {
+                    console.warn('Property not found with ID:', selectedPropertyId);
+                }
+            }
+        });
 
         // Auto-generate booking reference when Direct Booking is selected
         const partnerSelect = document.getElementById('partnerId');
@@ -823,11 +885,15 @@ class App {
                 customer_name: document.getElementById('customerName').value,
                 customer_phone: document.getElementById('customerPhone').value,
                 customer_email: document.getElementById('customerEmail').value,
+                customer_state: document.getElementById('customerState').value,
                 check_in_date: checkIn,
                 check_out_date: checkOut,
                 num_adults: numAdults,
-                extra_adults: document.getElementById('extraAdults').value,
                 num_kids: numKids,
+                per_night_cost: parseFloat(document.getElementById('perNightCost').value) || 0,
+                per_adult_cost: parseFloat(document.getElementById('primaryAdultCost').value) || 0,
+                extra_adult_cost: parseFloat(document.getElementById('extraAdultCost').value) || 0,
+                per_kid_cost: parseFloat(document.getElementById('perKidCost').value) || 0,
                 message: document.getElementById('message').value,
                 csrf_token: this.csrfToken
             };
@@ -868,6 +934,53 @@ class App {
         }
 
         const booking = data.booking;
+        
+        console.log('Booking data:', booking);
+        
+        // Fetch property data to auto-populate pricing if needed
+        let propertyPricing = null;
+        if (booking.property_id) {
+            try {
+                const propResponse = await fetch('api/properties.php?action=list');
+                const propData = await propResponse.json();
+                console.log('Properties data:', propData);
+                if (propData.success) {
+                    const property = propData.properties.find(p => p.id == booking.property_id);
+                    console.log('Found property:', property);
+                    if (property) {
+                        propertyPricing = {
+                            per_day_cost: parseFloat(property.per_day_cost) || 0,
+                            per_adult_cost: parseFloat(property.per_adult_cost) || 0,
+                            extra_adult_cost: parseFloat(property.extra_adult_cost) || 0,
+                            per_kid_cost: parseFloat(property.per_kid_cost) || 0
+                        };
+                        console.log('Property pricing:', propertyPricing);
+                    }
+                }
+            } catch (error) {
+                console.error('Error fetching property pricing:', error);
+            }
+        } else {
+            console.warn('No property_id in booking');
+        }
+        
+        // Use property pricing if booking pricing is not set (0 or null)
+        // Need to check for 0 values properly since '0.00' is truthy
+        const perNightCost = (booking.per_night_cost && parseFloat(booking.per_night_cost) > 0) 
+            ? parseFloat(booking.per_night_cost) 
+            : (propertyPricing?.per_day_cost || 0);
+        const perAdultCost = (booking.per_adult_cost && parseFloat(booking.per_adult_cost) > 0) 
+            ? parseFloat(booking.per_adult_cost) 
+            : (propertyPricing?.per_adult_cost || 0);
+        const extraAdultCost = (booking.extra_adult_cost && parseFloat(booking.extra_adult_cost) > 0) 
+            ? parseFloat(booking.extra_adult_cost) 
+            : (propertyPricing?.extra_adult_cost || 0);
+        const perKidCost = (booking.per_kid_cost && parseFloat(booking.per_kid_cost) > 0) 
+            ? parseFloat(booking.per_kid_cost) 
+            : (propertyPricing?.per_kid_cost || 0);
+        
+        console.log('Final pricing values:', { perNightCost, perAdultCost, extraAdultCost, perKidCost });
+        
         const nights = Math.ceil((new Date(booking.check_out_date) - new Date(booking.check_in_date)) / (1000 * 60 * 60 * 24));
         
         // Calculate primary and extra adults
@@ -892,12 +1005,17 @@ class App {
                             </div>
                             <div class="form-group">
                                 <label>Phone *</label>
-                                <input type="tel" id="editCustomerPhone" value="${booking.customer_phone}" required>
+                                <input type="tel" id="editCustomerPhone" value="${booking.customer_phone}" placeholder="+91 98765 43210 or +1 (555) 123-4567" required>
                             </div>
                         </div>
                         <div class="form-group">
-                            <label>Email *</label>
-                            <input type="email" id="editCustomerEmail" value="${booking.customer_email}" required>
+                            <label>Email</label>
+                            <input type="email" id="editCustomerEmail" value="${booking.customer_email}">
+                        </div>
+
+                        <div class="form-group">
+                            <label>State</label>
+                            <input type="text" id="editCustomerState" value="${booking.customer_state || ''}" placeholder="e.g., Maharashtra">
                         </div>
                         
                         <h3 style="margin: 1.5rem 0 1rem; color: var(--primary);">Booking Details</h3>
@@ -905,7 +1023,7 @@ class App {
                             <div class="form-group">
                                 <label>Status</label>
                                 <select id="editStatus">
-                                    <option value="Enquiry" ${booking.status === 'Enquiry' ? 'selected' : ''}>Enquiry</option>
+                                    <option value="Inquiry" ${booking.status === 'Inquiry' ? 'selected' : ''}>Inquiry</option>
                                     <option value="Confirmed" ${booking.status === 'Confirmed' ? 'selected' : ''}>Confirmed</option>
                                     <option value="Cancelled" ${booking.status === 'Cancelled' ? 'selected' : ''}>Cancelled</option>
                                     <option value="Personal" ${booking.status === 'Personal' ? 'selected' : ''}>Personal</option>
@@ -946,131 +1064,144 @@ class App {
                             <textarea id="editMessage" rows="2">${booking.message || ''}</textarea>
                         </div>
                         
-                        ${booking.status === 'Enquiry' || booking.status === 'Confirmed' ? `
-                            <hr style="margin: 1.5rem 0;">
-                            <h3 style="margin-bottom: 1rem; color: var(--primary);">Pricing Details</h3>
-                            <div class="form-row">
-                                <div class="form-group">
-                                    <label>Per Night Cost (₹) *</label>
-                                    <input type="number" id="editPerNight" value="${booking.per_night_cost || 5000}" required>
-                                </div>
-                                <div class="form-group">
-                                    <label>Per Kid Cost (₹) *</label>
-                                    <input type="number" id="editPerKid" value="${booking.per_kid_cost || 800}" required>
-                                </div>
+                        <hr style="margin: 1.5rem 0;">
+                        <h3 style="margin-bottom: 1rem; color: var(--primary);">Pricing Details</h3>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Per Night Cost (₹) *</label>
+                                <input type="number" id="editPerNight" value="${perNightCost}" step="0.01" min="0" required>
                             </div>
-                            <div class="form-row">
-                                <div class="form-group">
-                                    <label>Primary Adult Cost (₹) *</label>
-                                    <input type="number" id="editPrimaryAdult" value="${booking.per_adult_cost || 1500}" required>
-                                    <small class="text-secondary">For first adult</small>
-                                </div>
-                                <div class="form-group">
-                                    <label>Extra Adult Cost (₹) *</label>
-                                    <input type="number" id="editExtraAdult" value="${booking.extra_adult_cost || booking.per_adult_cost || 1500}" required>
-                                    <small class="text-secondary">Per additional adult</small>
-                                </div>
+                            <div class="form-group">
+                                <label>Per Kid Cost (₹) *</label>
+                                <input type="number" id="editPerKid" value="${perKidCost}" step="0.01" min="0" required>
                             </div>
-                            <div class="form-row">
-                                <div class="form-group">
-                                    <label>Discount (%)</label>
-                                    <input type="number" id="editDiscount" min="0" max="100" value="${booking.discount || 0}">
-                                </div>
-                                <div class="form-group">
-                                    <label>GST (%)</label>
-                                    <input type="number" id="editGst" value="${booking.gst || 18}">
-                                </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Primary Adult Cost (₹) *</label>
+                                <input type="number" id="editPrimaryAdult" value="${perAdultCost}" step="0.01" min="0" required>
+                                <small class="text-secondary">For first adult</small>
                             </div>
-                            <div class="form-row">
-                                <div class="form-group">
-                                    <label style="display: flex; align-items: center; gap: 0.5rem;">
-                                        Tax Withhold
-                                        <select id="editTaxWithholdType" style="width: auto; padding: 0.25rem 0.5rem; font-size: 0.9rem;">
-                                            <option value="percentage" ${(booking.tax_withhold_type || 'percentage') === 'percentage' ? 'selected' : ''}>%</option>
-                                            <option value="fixed" ${booking.tax_withhold_type === 'fixed' ? 'selected' : ''}>₹</option>
-                                        </select>
-                                    </label>
-                                    <input type="number" id="editTaxWithhold" value="${booking.tax_withhold || 0}">
-                                    <small class="text-secondary" id="taxWithholdHint">Percentage deduction</small>
-                                </div>
+                            <div class="form-group">
+                                <label>Extra Adult Cost (₹) *</label>
+                                <input type="number" id="editExtraAdult" value="${extraAdultCost}" step="0.01" min="0" required>
+                                <small class="text-secondary">Per additional adult</small>
                             </div>
-                            
-                            <div style="margin: 1rem 0; padding: 1rem; background: var(--bg-secondary); border-radius: 8px;">
-                                <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
-                                    <span>Nights:</span>
-                                    <strong><span id="calcNights">${nights}</span></strong>
-                                </div>
-                                <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
-                                    <span>Accommodation (<span id="calcNights2">${nights}</span> × ₹<span id="perNightDisplay">0</span>):</span>
-                                    <strong>₹<span id="calcAccommodation">0</span></strong>
-                                </div>
-                                <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
-                                    <span>Primary Adult (1 × ₹<span id="primaryAdultDisplay">0</span>):</span>
-                                    <strong>₹<span id="calcPrimaryAdult">0</span></strong>
-                                </div>
-                                <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
-                                    <span>Extra Adults (<span id="calcExtraAdultsCount">${extraAdults}</span> × ₹<span id="extraAdultDisplay">0</span>):</span>
-                                    <strong>₹<span id="calcExtraAdults">0</span></strong>
-                                </div>
-                                <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
-                                    <span>Kids (<span id="calcKidsCount">${booking.num_kids}</span> × ₹<span id="perKidDisplay">0</span>):</span>
-                                    <strong>₹<span id="calcKids">0</span></strong>
-                                </div>
-                                <hr style="margin: 0.5rem 0; border-color: var(--text-secondary);">
-                                <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
-                                    <span>Subtotal:</span>
-                                    <strong>₹<span id="calcSubtotal">0</span></strong>
-                                </div>
-                                <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem; color: var(--success);">
-                                    <span>Discount (<span id="discountPercent">0</span>%):</span>
-                                    <strong>- ₹<span id="calcDiscountAmount">0</span></strong>
-                                </div>
-                                <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
-                                    <span>After Discount:</span>
-                                    <strong>₹<span id="calcAfterDiscount">0</span></strong>
-                                </div>
-                                <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
-                                    <span>GST (<span id="gstPercent">0</span>%):</span>
-                                    <strong>+ ₹<span id="calcGstAmount">0</span></strong>
-                                </div>
-                                <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem; color: var(--error);">
-                                    <span>Tax Withhold <span id="taxWithholdDisplay">0%</span>:</span>
-                                    <strong>- ₹<span id="calcTaxWithholdAmount">0</span></strong>
-                                </div>
-                                <hr style="margin: 0.5rem 0;">
-                                <div style="display: flex; justify-content: space-between; font-size: 1.1rem; color: var(--primary); font-weight: 700;">
-                                    <span>Total Amount:</span>
-                                    <span>₹<span id="calcTotal">0</span></span>
-                                </div>
-                            </div>
-                            
-                            <div class="form-row">
-                                <div class="form-group">
-                                    <label>Payment Status *</label>
-                                    <select id="editPaymentStatus">
-                                        <option value="Quote" ${booking.payment_status === 'Quote' ? 'selected' : ''}>Quote (Valid 3 days)</option>
-                                        <option value="Pending" ${booking.payment_status === 'Pending' ? 'selected' : ''}>Pending</option>
-                                        <option value="Partial Paid" ${booking.payment_status === 'Partial Paid' ? 'selected' : ''}>Partial Paid</option>
-                                        <option value="Paid" ${booking.payment_status === 'Paid' ? 'selected' : ''}>Paid</option>
+                        </div>
+                        
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label style="display: flex; align-items: center; gap: 0.5rem;">
+                                    Discount
+                                    <select id="editDiscountType" style="width: auto; padding: 0.25rem 0.5rem; font-size: 0.9rem;">
+                                        <option value="fixed" ${(booking.discount_type || 'fixed') === 'fixed' ? 'selected' : ''}>₹</option>
+                                        <option value="percentage" ${booking.discount_type === 'percentage' ? 'selected' : ''}>%</option>
                                     </select>
-                                </div>
-                                <div class="form-group" id="paymentMethodGroup">
-                                    <label>Payment Method</label>
-                                    <select id="editPaymentMethod">
-                                        <option value="">Select...</option>
-                                        <option value="Cash" ${booking.payment_method === 'Cash' ? 'selected' : ''}>Cash</option>
-                                        <option value="UPI" ${booking.payment_method === 'UPI' ? 'selected' : ''}>UPI</option>
-                                        <option value="Bank Transfer" ${booking.payment_method === 'Bank Transfer' ? 'selected' : ''}>Bank Transfer</option>
-                                        <option value="Card" ${booking.payment_method === 'Card' ? 'selected' : ''}>Card</option>
+                                </label>
+                                <input type="number" id="editDiscount" min="0" value="${booking.discount || 0}">
+                                <small class="text-secondary" id="discountHint">Fixed amount deduction</small>
+                            </div>
+                            <div class="form-group">
+                                <label style="display: flex; align-items: center; gap: 0.5rem;">
+                                    GST
+                                    <select id="editGstType" style="width: auto; padding: 0.25rem 0.5rem; font-size: 0.9rem;">
+                                        <option value="fixed" ${(booking.gst_type || 'fixed') === 'fixed' ? 'selected' : ''}>₹</option>
+                                        <option value="percentage" ${booking.gst_type === 'percentage' ? 'selected' : ''}>%</option>
                                     </select>
-                                </div>
+                                </label>
+                                <input type="number" id="editGst" value="${booking.gst || 0}">
+                                <small class="text-secondary" id="gstHint">Fixed amount</small>
                             </div>
-                            <div class="form-group" id="amountPaidGroup" style="display: none;">
-                                <label>Amount Paid (₹) *</label>
-                                <input type="number" id="editAmountPaid" value="${booking.amount_paid || 0}" min="0">
-                                <small class="text-secondary">Remaining: ₹<span id="remainingAmount">0</span></small>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label style="display: flex; align-items: center; gap: 0.5rem;">
+                                    Tax Withhold
+                                    <select id="editTaxWithholdType" style="width: auto; padding: 0.25rem 0.5rem; font-size: 0.9rem;">
+                                        <option value="fixed" ${(booking.tax_withhold_type || 'fixed') === 'fixed' ? 'selected' : ''}>₹</option>
+                                        <option value="percentage" ${booking.tax_withhold_type === 'percentage' ? 'selected' : ''}>%</option>
+                                    </select>
+                                </label>
+                                <input type="number" id="editTaxWithhold" value="${booking.tax_withhold || 0}">
+                                <small class="text-secondary" id="taxWithholdHint">Fixed amount deduction</small>
                             </div>
-                        ` : ''}
+                        </div>
+                        
+                        <div style="margin: 1rem 0; padding: 1rem; background: var(--bg-secondary); border-radius: 8px;">
+                            <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                                <span>Nights:</span>
+                                <strong><span id="calcNights">${nights}</span></strong>
+                            </div>
+                            <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                                <span>Accommodation (<span id="calcNights2">${nights}</span> × ₹<span id="perNightDisplay">0</span>):</span>
+                                <strong>₹<span id="calcAccommodation">0</span></strong>
+                            </div>
+                            <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                                <span>Primary Adult (1 × ₹<span id="primaryAdultDisplay">0</span>):</span>
+                                <strong>₹<span id="calcPrimaryAdult">0</span></strong>
+                            </div>
+                            <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                                <span>Extra Adults (<span id="calcExtraAdultsCount">${extraAdults}</span> × ₹<span id="extraAdultDisplay">0</span>):</span>
+                                <strong>₹<span id="calcExtraAdults">0</span></strong>
+                            </div>
+                            <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                                <span>Kids (<span id="calcKidsCount">${booking.num_kids}</span> × ₹<span id="perKidDisplay">0</span>):</span>
+                                <strong>₹<span id="calcKids">0</span></strong>
+                            </div>
+                            <hr style="margin: 0.5rem 0; border-color: var(--text-secondary);">
+                            <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                                <span>Subtotal:</span>
+                                <strong>₹<span id="calcSubtotal">0</span></strong>
+                            </div>
+                            <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem; color: var(--success);">
+                                <span>Discount (<span id="discountPercent">0</span>%):</span>
+                                <strong>- ₹<span id="calcDiscountAmount">0</span></strong>
+                            </div>
+                            <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                                <span>After Discount:</span>
+                                <strong>₹<span id="calcAfterDiscount">0</span></strong>
+                            </div>
+                            <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                                <span>GST (<span id="gstPercent">0</span>%):</span>
+                                <strong>+ ₹<span id="calcGstAmount">0</span></strong>
+                            </div>
+                            <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem; color: var(--error);">
+                                <span>Tax Withhold <span id="taxWithholdDisplay">0%</span>:</span>
+                                <strong>- ₹<span id="calcTaxWithholdAmount">0</span></strong>
+                            </div>
+                            <hr style="margin: 0.5rem 0;">
+                            <div style="display: flex; justify-content: space-between; font-size: 1.1rem; color: var(--primary); font-weight: 700;">
+                                <span>Total Amount:</span>
+                                <span>₹<span id="calcTotal">0</span></span>
+                            </div>
+                        </div>
+                        
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Payment Status *</label>
+                                <select id="editPaymentStatus">
+                                    <option value="Quote" ${booking.payment_status === 'Quote' ? 'selected' : ''}>Quote (Valid 3 days)</option>
+                                    <option value="Pending" ${booking.payment_status === 'Pending' ? 'selected' : ''}>Pending</option>
+                                    <option value="Partial Paid" ${booking.payment_status === 'Partial Paid' ? 'selected' : ''}>Partial Paid</option>
+                                    <option value="Paid" ${booking.payment_status === 'Paid' ? 'selected' : ''}>Paid</option>
+                                </select>
+                            </div>
+                            <div class="form-group" id="paymentMethodGroup">
+                                <label>Payment Method</label>
+                                <select id="editPaymentMethod">
+                                    <option value="">Select...</option>
+                                    <option value="Cash" ${booking.payment_method === 'Cash' ? 'selected' : ''}>Cash</option>
+                                    <option value="UPI" ${booking.payment_method === 'UPI' ? 'selected' : ''}>UPI</option>
+                                    <option value="Bank Transfer" ${booking.payment_method === 'Bank Transfer' ? 'selected' : ''}>Bank Transfer</option>
+                                    <option value="Card" ${booking.payment_method === 'Card' ? 'selected' : ''}>Card</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-group" id="amountPaidGroup" style="display: none;">
+                            <label>Amount Paid (₹) *</label>
+                            <input type="number" id="editAmountPaid" value="${booking.amount_paid || 0}" min="0">
+                            <small class="text-secondary">Remaining: ₹<span id="remainingAmount">0</span></small>
+                        </div>
                     </form>
                 </div>
                 <div class="modal-footer" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem;">
@@ -1079,11 +1210,11 @@ class App {
                         ${booking.payment_status === 'Paid' ? `
                             <button type="button" class="btn btn-secondary" id="viewInvoiceBtn">📄 View Invoice</button>
                         ` : ''}
-                        ${booking.status === 'Enquiry' ? `
+                        ${(booking.status === 'Inquiry' || booking.status === 'Enquiry') ? `
                             <button type="button" class="btn btn-secondary" id="saveDraftBtn">Save as Draft</button>
-                            <button type="button" class="btn btn-primary" id="sendOfferBtn">Send Quote</button>
+                            ${booking.customer_email ? `<button type="button" class="btn btn-primary" id="sendOfferBtn">Send Quote</button>` : '<button type="button" class="btn btn-primary" id="saveBookingChanges">Save Changes</button>'}
                         ` : booking.status === 'Confirmed' ? `
-                            <button type="button" class="btn btn-secondary" id="sendUpdatedInvoiceBtn" style="display: none;">Send Updated Invoice</button>
+                            ${booking.customer_email ? `<button type="button" class="btn btn-secondary" id="sendUpdatedInvoiceBtn" style="display: none;">Send Updated Invoice</button>` : ''}
                             <button type="button" class="btn btn-primary" id="saveBookingChanges">Save Changes</button>
                         ` : `
                             <button type="button" class="btn btn-primary" id="saveBookingChanges">Save Changes</button>
@@ -1100,6 +1231,7 @@ class App {
             customer_name: booking.customer_name,
             customer_phone: booking.customer_phone,
             customer_email: booking.customer_email,
+            customer_state: booking.customer_state || '',
             check_in_date: booking.check_in_date,
             check_out_date: booking.check_out_date,
             num_adults: booking.num_adults,
@@ -1125,6 +1257,7 @@ class App {
                 document.getElementById('editCustomerName').value !== originalData.customer_name ||
                 document.getElementById('editCustomerPhone').value !== originalData.customer_phone ||
                 document.getElementById('editCustomerEmail').value !== originalData.customer_email ||
+                document.getElementById('editCustomerState').value !== originalData.customer_state ||
                 document.getElementById('editCheckIn').value !== originalData.check_in_date ||
                 document.getElementById('editCheckOut').value !== originalData.check_out_date ||
                 parseInt(document.getElementById('editAdults').value) !== parseInt(originalData.num_adults) ||
@@ -1134,16 +1267,21 @@ class App {
                 parseFloat(document.getElementById('editExtraAdult')?.value || 0) !== parseFloat(originalData.extra_adult_cost || 0) ||
                 parseFloat(document.getElementById('editPerKid')?.value || 0) !== parseFloat(originalData.per_kid_cost || 0) ||
                 parseFloat(document.getElementById('editDiscount')?.value || 0) !== parseFloat(originalData.discount || 0) ||
+                document.getElementById('editDiscountType')?.value !== (originalData.discount_type || 'fixed') ||
                 parseFloat(document.getElementById('editGst')?.value || 0) !== parseFloat(originalData.gst || 0) ||
+                document.getElementById('editGstType')?.value !== (originalData.gst_type || 'fixed') ||
                 parseFloat(document.getElementById('editTaxWithhold')?.value || 0) !== parseFloat(originalData.tax_withhold || 0) ||
-                document.getElementById('editTaxWithholdType')?.value !== originalData.tax_withhold_type ||
+                document.getElementById('editTaxWithholdType')?.value !== (originalData.tax_withhold_type || 'fixed') ||
                 document.getElementById('editPaymentStatus')?.value !== originalData.payment_status ||
                 document.getElementById('editPaymentMethod')?.value !== originalData.payment_method ||
                 parseFloat(document.getElementById('editAmountPaid')?.value || 0) !== parseFloat(originalData.amount_paid);
             
             const sendBtn = document.getElementById('sendUpdatedInvoiceBtn');
+            const currentEmail = document.getElementById('editCustomerEmail').value.trim();
+            
+            // Only show send invoice button if there are changes AND email exists
             if (sendBtn) {
-                sendBtn.style.display = hasChanges ? 'inline-block' : 'none';
+                sendBtn.style.display = (hasChanges && currentEmail) ? 'inline-block' : 'none';
             }
             
             return hasChanges;
@@ -1161,10 +1299,14 @@ class App {
             const primaryAdultCost = parseFloat(document.getElementById('editPrimaryAdult')?.value) || 0;
             const extraAdultCost = parseFloat(document.getElementById('editExtraAdult')?.value) || 0;
             const perKid = parseFloat(document.getElementById('editPerKid')?.value) || 0;
+            
+            console.log('Calculate Total - Kids:', kids, 'Per Kid Cost:', perKid, 'Kids Total:', perKid * kids);
             const discount = parseFloat(document.getElementById('editDiscount')?.value) || 0;
+            const discountType = document.getElementById('editDiscountType')?.value || 'fixed';
             const gst = parseFloat(document.getElementById('editGst')?.value) || 0;
+            const gstType = document.getElementById('editGstType')?.value || 'fixed';
             const taxWithhold = parseFloat(document.getElementById('editTaxWithhold')?.value) || 0;
-            const taxWithholdType = document.getElementById('editTaxWithholdType')?.value || 'percentage';
+            const taxWithholdType = document.getElementById('editTaxWithholdType')?.value || 'fixed';
             
             // Update displays
             document.getElementById('extraAdultsCalc').textContent = extraAdultsCount;
@@ -1176,8 +1318,6 @@ class App {
             document.getElementById('primaryAdultDisplay').textContent = primaryAdultCost.toFixed(0);
             document.getElementById('extraAdultDisplay').textContent = extraAdultCost.toFixed(0);
             document.getElementById('perKidDisplay').textContent = perKid.toFixed(0);
-            document.getElementById('discountPercent').textContent = discount;
-            document.getElementById('gstPercent').textContent = gst;
             
             // Calculate line items
             const accommodationCost = perNight * nights;
@@ -1195,7 +1335,14 @@ class App {
             document.getElementById('calcSubtotal').textContent = subtotal.toFixed(0);
             
             // Calculate discount
-            const discountAmount = subtotal * discount / 100;
+            let discountAmount = 0;
+            if (discountType === 'percentage') {
+                discountAmount = subtotal * discount / 100;
+                document.getElementById('discountPercent').textContent = discount + '%';
+            } else {
+                discountAmount = discount;
+                document.getElementById('discountPercent').textContent = '(Fixed)';
+            }
             document.getElementById('calcDiscountAmount').textContent = discountAmount.toFixed(0);
             
             // After discount
@@ -1203,7 +1350,14 @@ class App {
             document.getElementById('calcAfterDiscount').textContent = afterDiscount.toFixed(0);
             
             // Calculate GST
-            const gstAmount = afterDiscount * gst / 100;
+            let gstAmount = 0;
+            if (gstType === 'percentage') {
+                gstAmount = afterDiscount * gst / 100;
+                document.getElementById('gstPercent').textContent = gst + '%';
+            } else {
+                gstAmount = gst;
+                document.getElementById('gstPercent').textContent = '(Fixed)';
+            }
             document.getElementById('calcGstAmount').textContent = gstAmount.toFixed(0);
             
             // Calculate tax withhold
@@ -1233,6 +1387,26 @@ class App {
             detectChanges();
             
             return total;
+        };
+        
+        // Discount type toggle
+        const updateDiscountHint = () => {
+            const type = document.getElementById('editDiscountType')?.value;
+            const hint = document.getElementById('discountHint');
+            if (hint) {
+                hint.textContent = type === 'percentage' ? 'Percentage deduction' : 'Fixed amount deduction';
+            }
+            calculateTotal();
+        };
+        
+        // GST type toggle
+        const updateGstHint = () => {
+            const type = document.getElementById('editGstType')?.value;
+            const hint = document.getElementById('gstHint');
+            if (hint) {
+                hint.textContent = type === 'percentage' ? 'Percentage amount' : 'Fixed amount';
+            }
+            calculateTotal();
         };
         
         // Tax withhold type toggle
@@ -1273,11 +1447,8 @@ class App {
         // Add event listeners for auto-calculation and change detection
         ['editCustomerName', 'editCustomerPhone', 'editCustomerEmail', 'editCheckIn', 'editCheckOut', 'editAdults', 'editKids', 'editPerNight', 'editPrimaryAdult', 'editExtraAdult', 'editPerKid', 'editDiscount', 'editGst', 'editTaxWithhold', 'editAmountPaid'].forEach(id => {
             document.getElementById(id)?.addEventListener('input', () => {
-                if (booking.status === 'Enquiry' || booking.status === 'Confirmed') {
-                    calculateTotal();
-                } else {
-                    detectChanges();
-                }
+                calculateTotal();
+                detectChanges();
             });
         });
         
@@ -1286,17 +1457,25 @@ class App {
             detectChanges();
         });
         document.getElementById('editPaymentMethod')?.addEventListener('change', detectChanges);
+        document.getElementById('editDiscountType')?.addEventListener('change', () => {
+            updateDiscountHint();
+            detectChanges();
+        });
+        document.getElementById('editGstType')?.addEventListener('change', () => {
+            updateGstHint();
+            detectChanges();
+        });
         document.getElementById('editTaxWithholdType')?.addEventListener('change', () => {
             updateTaxWithholdHint();
             detectChanges();
         });
         
-        // Initial calculation
-        if (booking.status === 'Enquiry' || booking.status === 'Confirmed') {
-            updateTaxWithholdHint();
-            calculateTotal();
-            togglePaymentMethod();
-        }
+        // Initial calculation and setup
+        updateDiscountHint();
+        updateGstHint();
+        updateTaxWithholdHint();
+        calculateTotal();
+        togglePaymentMethod();
 
         // Save changes handler
         document.getElementById('saveBookingChanges')?.addEventListener('click', async () => {
@@ -1310,12 +1489,12 @@ class App {
             await this.showInvoiceFromDB(booking.id);
         });
 
-        // Save as draft handler (for Enquiry status)
+        // Save as draft handler (for Inquiry status)
         document.getElementById('saveDraftBtn')?.addEventListener('click', async () => {
             await this.saveBookingData(booking, modal, calculateTotal, false);
         });
 
-        // Send offer handler (for Enquiry status)
+        // Send offer handler (for Inquiry status)
         document.getElementById('sendOfferBtn')?.addEventListener('click', async () => {
             await this.saveBookingData(booking, modal, calculateTotal, true);
         });
@@ -1334,6 +1513,7 @@ class App {
             customer_name: document.getElementById('editCustomerName').value,
             customer_phone: document.getElementById('editCustomerPhone').value,
             customer_email: document.getElementById('editCustomerEmail').value,
+            customer_state: document.getElementById('editCustomerState').value,
             status: document.getElementById('editStatus').value,
             booking_reference: document.getElementById('editBookingRef').value,
             check_in_date: document.getElementById('editCheckIn').value,
@@ -1343,13 +1523,15 @@ class App {
             message: document.getElementById('editMessage').value
         };
         
-        if (booking.status === 'Enquiry' || booking.status === 'Confirmed') {
+        if (booking.status === 'Inquiry' || booking.status === 'Enquiry' || booking.status === 'Confirmed') {
             updatedData.per_night_cost = document.getElementById('editPerNight').value;
             updatedData.per_adult_cost = document.getElementById('editPrimaryAdult').value;
             updatedData.extra_adult_cost = document.getElementById('editExtraAdult').value;
             updatedData.per_kid_cost = document.getElementById('editPerKid').value;
             updatedData.discount = document.getElementById('editDiscount').value;
+            updatedData.discount_type = document.getElementById('editDiscountType').value;
             updatedData.gst = document.getElementById('editGst').value;
+            updatedData.gst_type = document.getElementById('editGstType').value;
             updatedData.tax_withhold = document.getElementById('editTaxWithhold').value;
             updatedData.tax_withhold_type = document.getElementById('editTaxWithholdType').value;
             updatedData.total_amount = total;
@@ -1365,6 +1547,13 @@ class App {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(updatedData)
         });
+
+        if (!response.ok) {
+            const errorText = await response.text();
+            console.error('Server error:', errorText);
+            this.showToast('Server error: Check console for details', 'error');
+            return;
+        }
 
         const result = await response.json();
         if (result.success) {
@@ -1555,10 +1744,10 @@ class App {
                         ${ownerName ? `<p style="margin: 5px 0; font-size: 13px; color: #888; font-style: italic;">Owner: ${ownerName}</p>` : ''}
                     </div>
                     <div style="text-align: right;">
-                        <h2 style="margin: 0; color: #2c5f7d; font-size: 32px;">QUOTE</h2>
-                        <p style="margin: 10px 0; font-size: 14px;">Ref: ${booking.booking_reference || 'QB-' + booking.id}</p>
+                        <h2 style="margin: 0; color: #2c5f7d; font-size: 32px;">${(booking.status === 'Inquiry' || booking.payment_status === 'Quote' || booking.payment_status === 'Pending') ? 'QUOTE' : 'INVOICE'}</h2>
+                        <p style="margin: 10px 0; font-size: 14px;">Ref: ${booking.booking_reference || (booking.status === 'Inquiry' ? 'QB-' : 'INV-') + booking.id}</p>
                         <p style="margin: 5px 0; font-size: 14px;">Date: ${new Date().toLocaleDateString('en-IN')}</p>
-                        <p style="margin: 5px 0; font-size: 14px; font-weight: bold; color: #e74c3c;">Valid Until: ${quoteValidUntil.toLocaleDateString('en-IN')}</p>
+                        ${(booking.status === 'Inquiry' || booking.payment_status === 'Quote' || booking.payment_status === 'Pending') ? `<p style="margin: 5px 0; font-size: 14px; font-weight: bold; color: #e74c3c;">Valid Until: ${quoteValidUntil.toLocaleDateString('en-IN')}</p>` : ''}
                     </div>
                 </div>
 
@@ -1714,18 +1903,32 @@ class App {
                 <!-- Terms & Conditions -->
                 <div style="margin-top: 30px; padding-top: 20px; border-top: 2px solid #dee2e6;">
                     <h3 style="color: #2c5f7d; margin-bottom: 10px;">TERMS & CONDITIONS</h3>
-                    <ul style="font-size: 13px; line-height: 1.6; color: #666; padding-left: 20px;">
+                    ${(booking.status === 'Inquiry' || booking.payment_status === 'Quote' || booking.payment_status === 'Pending') ? `
+                    <ul style="font-size: 13px; line-height: 1.8; color: #666; padding-left: 20px;">
                         <li>This quote is valid for 3 days from the date of issue</li>
-                        <li>Check-in time: 2:00 PM | Check-out time: 11:00 AM</li>
+                        <li>Check-in Time: 13:00, Check-out: 10:00</li>
                         <li>50% advance payment required to confirm booking</li>
-                        <li>Cancellation 7+ days before check-in: 100% refund (minus processing fee)</li>
-                        <li>Cancellation 3-6 days before: 50% refund</li>
-                        <li>Cancellation within 2 days: No refund</li>
+                        <li>Cancellation Policy:
+                            <ul style="margin-top: 5px; margin-bottom: 5px;">
+                                <li>Before 21 days of check-in date - 100% refund (minus processing fee)</li>
+                                <li>Before 14 days of check-in date - 50% refund</li>
+                                <li>No refund from check-in date to 14 days</li>
+                            </ul>
+                        </li>
+                        <li>No Party, No Event, No meeting, Not allow Unmarried-Local couple</li>
+                        <li>No Smoking inside premises, No Pets are allowed - without approval</li>
+                        <li>Valid Photo ID with address proof required as per statutory requirements</li>
+                        <li>Making payment for booking - assume that you have read and agree to follow all house policy & expectation as mentioned on our website <a href="https://homelandstay.com/homeland-stay-policies-and-expectations/" style="color: #2c5f7d; text-decoration: none;">https://homelandstay.com/homeland-stay-policies-and-expectations/</a></li>
+                    </ul>
+                    ` : `
+                    <ul style="font-size: 13px; line-height: 1.6; color: #666; padding-left: 20px;">
+                        <li>Check-in Time: 13:00, Check-out: 10:00</li>
                         <li>Smoking is strictly prohibited inside the property</li>
                         <li>Pets are not allowed without prior approval</li>
-                        <li>Maximum occupancy: 8 guests</li>
-                        <li>Valid ID proof required at check-in</li>
+                        <li>Valid Photo ID with address proof required at check-in as per statutory requirements</li>
+                        <li>Guests must follow all house policies as mentioned on our website</li>
                     </ul>
+                    `}
                 </div>
 
                 <!-- Footer -->
@@ -1930,7 +2133,7 @@ class App {
                 dateStr >= b.check_in_date && dateStr <= b.check_out_date && b.status === 'Confirmed'
             );
             const enquiries = bookings.filter(b => 
-                dateStr >= b.check_in_date && dateStr <= b.check_out_date && b.status === 'Enquiry'
+                dateStr >= b.check_in_date && dateStr <= b.check_out_date && b.status === 'Inquiry'
             );
             const personalBookings = bookings.filter(b => 
                 dateStr >= b.check_in_date && dateStr <= b.check_out_date && b.status === 'Personal'
@@ -1988,7 +2191,7 @@ class App {
                         }
                         
                         return `
-                        <div class="calendar-booking calendar-booking-clickable enquiry-booking" data-booking-id="${b.id}" title="Pending Enquiry - ${isCheckIn ? 'Check-in' : isCheckOut ? 'Check-out' : 'Staying'} - Click to view details">
+                        <div class="calendar-booking calendar-booking-clickable inquiry-booking" data-booking-id="${b.id}" title="Pending Inquiry - ${isCheckIn ? 'Check-in' : isCheckOut ? 'Check-out' : 'Staying'} - Click to view details">
                             <div class="calendar-booking-header">
                                 <div class="calendar-booking-name">${b.customer_name}</div>
                                 ${dayLabel}
@@ -2092,7 +2295,7 @@ class App {
                         <input type="text" id="searchBooking" placeholder="Search..." style="flex: 1; min-width: 200px; padding: 0.75rem; border: 1px solid var(--border); border-radius: 6px; font-size: 1rem;">
                         <select id="filterStatus" style="min-width: 150px; padding: 0.75rem; border: 1px solid var(--border); border-radius: 6px; font-size: 1rem;">
                             <option value="">All Status</option>
-                            <option value="Enquiry">Enquiry</option>
+                            <option value="Inquiry">Inquiry</option>
                             <option value="Confirmed">Confirmed</option>
                             <option value="Cancelled">Cancelled</option>
                             <option value="Personal">Personal</option>
@@ -2195,7 +2398,7 @@ class App {
 
     getStatusColor(status) {
         const colors = {
-            'Enquiry': '#f59e0b',
+            'Inquiry': '#f59e0b',
             'Confirmed': '#10b981',
             'Cancelled': '#ef4444',
             'Personal': '#8b5cf6',

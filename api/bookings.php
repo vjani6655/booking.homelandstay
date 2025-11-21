@@ -153,11 +153,16 @@ if ($method === 'POST' && $action === 'create') {
     $customerName = sanitizeInput($data['customer_name'], 100);
     $customerPhone = sanitizeInput($data['customer_phone'], 20);
     $customerEmail = sanitizeInput($data['customer_email'], 255);
+    $customerState = sanitizeInput($data['customer_state'] ?? '', 100);
     $checkInDate = sanitizeInput($data['check_in_date'], 10);
     $checkOutDate = sanitizeInput($data['check_out_date'], 10);
     $numAdults = (int)($data['num_adults'] ?? 1);
     $extraAdults = (int)($data['extra_adults'] ?? 0);
     $numKids = (int)($data['num_kids'] ?? 0);
+    $perNightCost = (float)($data['per_night_cost'] ?? 0);
+    $perAdultCost = (float)($data['per_adult_cost'] ?? 0);
+    $extraAdultCost = (float)($data['extra_adult_cost'] ?? 0);
+    $perKidCost = (float)($data['per_kid_cost'] ?? 0);
     $message = sanitizeInput($data['message'] ?? '', 1000);
     
     // Validate email
@@ -166,8 +171,9 @@ if ($method === 'POST' && $action === 'create') {
         exit;
     }
     
-    // Validate phone number format
-    if (!preg_match('/^[+]?[0-9]{10,15}$/', $customerPhone)) {
+    // Validate phone number format - allow international formats
+    $cleanPhone = preg_replace('/[\s\-\(\)]/', '', $customerPhone);
+    if (!preg_match('/^[+]?[0-9]{7,15}$/', $cleanPhone)) {
         echo json_encode(['success' => false, 'message' => 'Invalid phone number']);
         exit;
     }
@@ -184,9 +190,9 @@ if ($method === 'POST' && $action === 'create') {
     }
     
     $db = getDB();
-    $stmt = $db->prepare("INSERT INTO bookings (status, property_id, partner_id, booking_reference, customer_name, customer_phone, customer_email, check_in_date, check_out_date, num_adults, extra_adults, num_kids, message) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+    $stmt = $db->prepare("INSERT INTO bookings (status, property_id, partner_id, booking_reference, customer_name, customer_phone, customer_email, customer_state, check_in_date, check_out_date, num_adults, extra_adults, num_kids, per_night_cost, per_adult_cost, extra_adult_cost, per_kid_cost, message) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
     
-    $stmt->execute([$status, $propertyId, $partnerId, $bookingReference, $customerName, $customerPhone, $customerEmail, $checkInDate, $checkOutDate, $numAdults, $extraAdults, $numKids, $message]);
+    $stmt->execute([$status, $propertyId, $partnerId, $bookingReference, $customerName, $customerPhone, $customerEmail, $customerState, $checkInDate, $checkOutDate, $numAdults, $extraAdults, $numKids, $perNightCost, $perAdultCost, $extraAdultCost, $perKidCost, $message]);
     
     $bookingId = $db->lastInsertId();
     
@@ -230,30 +236,46 @@ if ($method === 'POST' && $action === 'update') {
         exit;
     }
     
-    // Sanitize inputs
-    $status = sanitizeInput($data['status'] ?? 'Enquiry');
-    $bookingReference = sanitizeInput($data['booking_reference'] ?? '');
-    $customerName = sanitizeInput($data['customer_name']);
-    $customerPhone = sanitizeInput($data['customer_phone']);
-    $customerEmail = sanitizeInput($data['customer_email']);
-    $checkInDate = sanitizeInput($data['check_in_date']);
-    $checkOutDate = sanitizeInput($data['check_out_date']);
-    $numAdults = (int)($data['num_adults'] ?? 1);
-    $numKids = (int)($data['num_kids'] ?? 0);
-    $message = sanitizeInput($data['message'] ?? '');
-    
-    if (empty($customerName) || empty($customerPhone) || empty($customerEmail) || empty($checkInDate) || empty($checkOutDate)) {
-        echo json_encode(['success' => false, 'message' => 'Required fields are missing']);
-        exit;
-    }
-    
     $db = getDB();
     
-    // Base update query
-    $sql = "UPDATE bookings SET status = ?, booking_reference = ?, customer_name = ?, customer_phone = ?, customer_email = ?, check_in_date = ?, check_out_date = ?, num_adults = ?, num_kids = ?, message = ?";
-    $params = [$status, $bookingReference, $customerName, $customerPhone, $customerEmail, $checkInDate, $checkOutDate, $numAdults, $numKids, $message];
+    // Check if this is a payment-only update (only payment fields provided)
+    $isPaymentOnlyUpdate = !isset($data['customer_name']) && !isset($data['check_in_date']) 
+                          && (isset($data['payment_status']) || isset($data['amount_paid']));
     
-    // Add pricing fields if provided
+    if ($isPaymentOnlyUpdate) {
+        // Payment-only update - don't require customer/booking fields
+        $sql = "UPDATE bookings SET id = ?";
+        $params = [$id];
+    } else {
+        // Full booking update - require all fields
+        $status = sanitizeInput($data['status'] ?? 'Enquiry');
+        $bookingReference = sanitizeInput($data['booking_reference'] ?? '');
+        $customerName = sanitizeInput($data['customer_name']);
+        $customerPhone = sanitizeInput($data['customer_phone']);
+        $customerEmail = sanitizeInput($data['customer_email']);
+        $checkInDate = sanitizeInput($data['check_in_date']);
+        $checkOutDate = sanitizeInput($data['check_out_date']);
+        $numAdults = (int)($data['num_adults'] ?? 1);
+        $numKids = (int)($data['num_kids'] ?? 0);
+        $message = sanitizeInput($data['message'] ?? '');
+        
+        if (empty($customerName) || empty($customerPhone) || empty($customerEmail) || empty($checkInDate) || empty($checkOutDate)) {
+            echo json_encode(['success' => false, 'message' => 'Required fields are missing']);
+            exit;
+        }
+        
+        // Base update query for full update
+        $sql = "UPDATE bookings SET status = ?, booking_reference = ?, customer_name = ?, customer_phone = ?, customer_email = ?, check_in_date = ?, check_out_date = ?, num_adults = ?, num_kids = ?, message = ?";
+        $params = [$status, $bookingReference, $customerName, $customerPhone, $customerEmail, $checkInDate, $checkOutDate, $numAdults, $numKids, $message];
+        
+        // Add customer_state if provided
+        if (isset($data['customer_state'])) {
+            $sql .= ", customer_state = ?";
+            $params[] = sanitizeInput($data['customer_state']);
+        }
+    }
+    
+    // Add pricing fields if provided (for both full and payment-only updates)
     if (isset($data['per_night_cost'])) {
         $sql .= ", per_night_cost = ?";
         $params[] = (float)$data['per_night_cost'];
@@ -274,9 +296,17 @@ if ($method === 'POST' && $action === 'update') {
         $sql .= ", discount = ?";
         $params[] = (float)$data['discount'];
     }
+    if (isset($data['discount_type'])) {
+        $sql .= ", discount_type = ?";
+        $params[] = sanitizeInput($data['discount_type']);
+    }
     if (isset($data['gst'])) {
         $sql .= ", gst = ?";
         $params[] = (float)$data['gst'];
+    }
+    if (isset($data['gst_type'])) {
+        $sql .= ", gst_type = ?";
+        $params[] = sanitizeInput($data['gst_type']);
     }
     if (isset($data['tax_withhold'])) {
         $sql .= ", tax_withhold = ?";

@@ -106,6 +106,7 @@ if (!verifyCSRFToken($csrfToken)) {
 $customerName = sanitizeInput($data['customer_name'] ?? '', 100);
 $customerPhone = sanitizeInput($data['customer_phone'] ?? '', 20);
 $customerEmail = sanitizeInput($data['customer_email'] ?? '', 255);
+$customerState = sanitizeInput($data['customer_state'] ?? '', 100);
 $checkInDate = sanitizeInput($data['check_in_date'] ?? '', 10);
 $checkOutDate = sanitizeInput($data['check_out_date'] ?? '', 10);
 $numAdults = (int)($data['num_adults'] ?? 1);
@@ -124,9 +125,11 @@ if (!validateEmail($customerEmail)) {
     exit;
 }
 
-// Validate phone number
-if (!preg_match('/^[+]?[0-9]{10,15}$/', str_replace([' ', '-', '(', ')'], '', $customerPhone))) {
-    echo json_encode(['success' => false, 'message' => 'Please enter a valid phone number (10-15 digits)']);
+// Validate phone number - allow international formats
+// Remove formatting characters for validation
+$cleanPhone = preg_replace('/[\s\-\(\)]/', '', $customerPhone);
+if (!preg_match('/^[+]?[0-9]{7,15}$/', $cleanPhone)) {
+    echo json_encode(['success' => false, 'message' => 'Please enter a valid phone number']);
     exit;
 }
 
@@ -179,7 +182,7 @@ try {
     $bookingReference = 'HLST' . strtoupper(substr(uniqid(), -8));
     
     // Insert booking with default partner_id = 1 (Direct Booking)
-    $stmt = $db->prepare("INSERT INTO bookings (status, partner_id, booking_reference, customer_name, customer_phone, customer_email, check_in_date, check_out_date, num_adults, num_kids, message) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+    $stmt = $db->prepare("INSERT INTO bookings (status, partner_id, booking_reference, customer_name, customer_phone, customer_email, customer_state, check_in_date, check_out_date, num_adults, num_kids, message) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
     
     $stmt->execute([
         'Enquiry',
@@ -188,6 +191,7 @@ try {
         $customerName,
         $customerPhone,
         $customerEmail,
+        $customerState,
         $checkInDate,
         $checkOutDate,
         $numAdults,

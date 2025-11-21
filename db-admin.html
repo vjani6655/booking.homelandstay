@@ -1,0 +1,466 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Database Admin - Homeland Booking</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <style>
+        .admin-container {
+            max-width: 1400px;
+            margin: 2rem auto;
+            padding: 0 1rem;
+        }
+        
+        .admin-header {
+            background: var(--card-bg);
+            padding: 2rem;
+            border-radius: 8px;
+            margin-bottom: 2rem;
+            box-shadow: var(--shadow);
+        }
+        
+        .admin-section {
+            background: var(--card-bg);
+            padding: 2rem;
+            border-radius: 8px;
+            margin-bottom: 2rem;
+            box-shadow: var(--shadow);
+        }
+        
+        .admin-section h2 {
+            color: var(--primary);
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .sql-editor {
+            width: 100%;
+            min-height: 200px;
+            padding: 1rem;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            background: var(--bg);
+            color: var(--text-primary);
+            resize: vertical;
+        }
+        
+        .result-area {
+            margin-top: 1rem;
+            padding: 1rem;
+            background: var(--bg);
+            border-radius: 4px;
+            border: 1px solid var(--border);
+            max-height: 400px;
+            overflow: auto;
+        }
+        
+        .result-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 1rem;
+        }
+        
+        .result-table th,
+        .result-table td {
+            padding: 0.75rem;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+        }
+        
+        .result-table th {
+            background: var(--primary);
+            color: white;
+            font-weight: 600;
+        }
+        
+        .result-table tr:hover {
+            background: var(--hover-bg);
+        }
+        
+        .quick-actions {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+        
+        .quick-action-card {
+            padding: 1rem;
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .quick-action-card:hover {
+            border-color: var(--primary);
+            transform: translateY(-2px);
+        }
+        
+        .quick-action-card h3 {
+            color: var(--primary);
+            font-size: 1rem;
+            margin-bottom: 0.5rem;
+        }
+        
+        .quick-action-card p {
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+            margin: 0;
+        }
+        
+        .success-msg {
+            padding: 1rem;
+            background: var(--success-light);
+            color: var(--success);
+            border-radius: 4px;
+            margin-top: 1rem;
+        }
+        
+        .error-msg {
+            padding: 1rem;
+            background: var(--error-light);
+            color: var(--error);
+            border-radius: 4px;
+            margin-top: 1rem;
+        }
+        
+        .info-msg {
+            padding: 1rem;
+            background: var(--info-light);
+            color: var(--info);
+            border-radius: 4px;
+            margin-top: 1rem;
+        }
+        
+        .btn-group {
+            display: flex;
+            gap: 0.5rem;
+            margin-top: 1rem;
+            flex-wrap: wrap;
+        }
+        
+        .table-info {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+        
+        .table-card {
+            padding: 1rem;
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 4px;
+        }
+        
+        .table-card h4 {
+            color: var(--primary);
+            margin-bottom: 0.5rem;
+        }
+        
+        .table-card p {
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+            margin: 0.25rem 0;
+        }
+        
+        pre {
+            background: var(--bg);
+            padding: 1rem;
+            border-radius: 4px;
+            overflow-x: auto;
+            font-size: 0.875rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="admin-container">
+        <div class="admin-header">
+            <h1>🗄️ Database Administration</h1>
+            <p style="color: var(--text-secondary); margin-top: 0.5rem;">
+                Manage database tables, run queries, and view schema information
+            </p>
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="admin-section">
+            <h2>⚡ Quick Actions</h2>
+            <div class="quick-actions">
+                <div class="quick-action-card" onclick="showTables()">
+                    <h3>📋 Show All Tables</h3>
+                    <p>View all tables in the database</p>
+                </div>
+                <div class="quick-action-card" onclick="loadTemplate('describe')">
+                    <h3>🔍 Describe Table</h3>
+                    <p>View table structure and columns</p>
+                </div>
+                <div class="quick-action-card" onclick="loadTemplate('create')">
+                    <h3>➕ Create Table</h3>
+                    <p>Create a new database table</p>
+                </div>
+                <div class="quick-action-card" onclick="loadTemplate('alter')">
+                    <h3>✏️ Alter Table</h3>
+                    <p>Modify existing table structure</p>
+                </div>
+                <div class="quick-action-card" onclick="loadTemplate('insert')">
+                    <h3>📝 Insert Data</h3>
+                    <p>Add new records to a table</p>
+                </div>
+                <div class="quick-action-card" onclick="loadTemplate('select')">
+                    <h3>🔎 Query Data</h3>
+                    <p>Run SELECT queries</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- SQL Editor -->
+        <div class="admin-section">
+            <h2>💻 SQL Query Editor</h2>
+            <textarea id="sqlEditor" class="sql-editor" placeholder="Enter your SQL query here...
+
+Examples:
+-- Show all tables
+SHOW TABLES;
+
+-- Describe a table
+DESCRIBE bookings;
+
+-- Create a new table
+CREATE TABLE example (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Alter a table (add column)
+ALTER TABLE bookings ADD COLUMN new_field VARCHAR(100);
+
+-- Select data
+SELECT * FROM bookings LIMIT 10;
+"></textarea>
+            
+            <div class="btn-group">
+                <button class="btn btn-primary" onclick="executeQuery()">▶️ Execute Query</button>
+                <button class="btn btn-secondary" onclick="clearEditor()">🗑️ Clear</button>
+                <button class="btn btn-secondary" onclick="formatSQL()">✨ Format SQL</button>
+            </div>
+
+            <div id="resultArea"></div>
+        </div>
+
+        <!-- Common Templates -->
+        <div class="admin-section">
+            <h2>📚 SQL Templates</h2>
+            <div class="table-info">
+                <div class="table-card">
+                    <h4>Add Column</h4>
+                    <pre>ALTER TABLE table_name
+ADD COLUMN column_name datatype;</pre>
+                </div>
+                <div class="table-card">
+                    <h4>Modify Column</h4>
+                    <pre>ALTER TABLE table_name
+MODIFY COLUMN column_name datatype;</pre>
+                </div>
+                <div class="table-card">
+                    <h4>Drop Column</h4>
+                    <pre>ALTER TABLE table_name
+DROP COLUMN column_name;</pre>
+                </div>
+                <div class="table-card">
+                    <h4>Add Index</h4>
+                    <pre>ALTER TABLE table_name
+ADD INDEX idx_name (column_name);</pre>
+                </div>
+                <div class="table-card">
+                    <h4>Create Table</h4>
+                    <pre>CREATE TABLE table_name (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);</pre>
+                </div>
+                <div class="table-card">
+                    <h4>Rename Table</h4>
+                    <pre>ALTER TABLE old_name
+RENAME TO new_name;</pre>
+                </div>
+            </div>
+        </div>
+
+        <!-- Back to Dashboard -->
+        <div style="text-align: center; margin-top: 2rem;">
+            <a href="dashboard.html" class="btn btn-secondary">← Back to Dashboard</a>
+        </div>
+    </div>
+
+    <script>
+        function loadTemplate(type) {
+            const editor = document.getElementById('sqlEditor');
+            const templates = {
+                'describe': 'DESCRIBE table_name;',
+                'create': `CREATE TABLE table_name (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    description TEXT,
+    status VARCHAR(50) DEFAULT 'active',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);`,
+                'alter': `-- Add a new column
+ALTER TABLE table_name ADD COLUMN column_name VARCHAR(255);
+
+-- Modify existing column
+ALTER TABLE table_name MODIFY COLUMN column_name VARCHAR(300);
+
+-- Drop a column
+ALTER TABLE table_name DROP COLUMN column_name;
+
+-- Add index
+ALTER TABLE table_name ADD INDEX idx_column (column_name);`,
+                'insert': `INSERT INTO table_name (column1, column2, column3) 
+VALUES ('value1', 'value2', 'value3');`,
+                'select': `SELECT * FROM table_name 
+WHERE condition = 'value' 
+ORDER BY created_at DESC 
+LIMIT 10;`
+            };
+            
+            editor.value = templates[type] || '';
+            editor.focus();
+        }
+
+        async function executeQuery() {
+            const sql = document.getElementById('sqlEditor').value.trim();
+            
+            if (!sql) {
+                showMessage('Please enter a SQL query', 'error');
+                return;
+            }
+
+            const resultArea = document.getElementById('resultArea');
+            resultArea.innerHTML = '<div class="info-msg">⏳ Executing query...</div>';
+
+            try {
+                const response = await fetch('api/db-admin.php', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ sql: sql })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    displayResults(data);
+                } else {
+                    showMessage(data.message || 'Query failed', 'error');
+                }
+            } catch (error) {
+                showMessage('Error executing query: ' + error.message, 'error');
+            }
+        }
+
+        function displayResults(data) {
+            const resultArea = document.getElementById('resultArea');
+            
+            let html = '<div class="success-msg">✅ Query executed successfully';
+            
+            if (data.affected_rows !== undefined) {
+                html += ` (${data.affected_rows} row(s) affected)`;
+            }
+            
+            html += '</div>';
+
+            if (data.results && data.results.length > 0) {
+                html += '<table class="result-table"><thead><tr>';
+                
+                // Table headers
+                const columns = Object.keys(data.results[0]);
+                columns.forEach(col => {
+                    html += `<th>${col}</th>`;
+                });
+                
+                html += '</tr></thead><tbody>';
+                
+                // Table rows
+                data.results.forEach(row => {
+                    html += '<tr>';
+                    columns.forEach(col => {
+                        const value = row[col] !== null ? row[col] : '<em style="color: var(--text-secondary);">NULL</em>';
+                        html += `<td>${value}</td>`;
+                    });
+                    html += '</tr>';
+                });
+                
+                html += '</tbody></table>';
+                html += `<p style="margin-top: 1rem; color: var(--text-secondary);">Showing ${data.results.length} row(s)</p>`;
+            } else if (data.message) {
+                html += `<div class="info-msg">${data.message}</div>`;
+            }
+
+            resultArea.innerHTML = html;
+        }
+
+        function showMessage(message, type = 'info') {
+            const resultArea = document.getElementById('resultArea');
+            const className = type === 'error' ? 'error-msg' : type === 'success' ? 'success-msg' : 'info-msg';
+            resultArea.innerHTML = `<div class="${className}">${message}</div>`;
+        }
+
+        async function showTables() {
+            document.getElementById('sqlEditor').value = 'SHOW TABLES;';
+            await executeQuery();
+        }
+
+        function clearEditor() {
+            document.getElementById('sqlEditor').value = '';
+            document.getElementById('resultArea').innerHTML = '';
+        }
+
+        function formatSQL() {
+            const editor = document.getElementById('sqlEditor');
+            let sql = editor.value;
+            
+            // Basic SQL formatting
+            sql = sql.replace(/\s+/g, ' ') // Remove extra spaces
+                     .replace(/\s*,\s*/g, ',\n    ') // Format commas
+                     .replace(/\s+(FROM|WHERE|ORDER BY|GROUP BY|HAVING|LIMIT|JOIN|LEFT JOIN|RIGHT JOIN|INNER JOIN)\s+/gi, '\n$1 ')
+                     .replace(/\s+(AND|OR)\s+/gi, '\n    $1 ')
+                     .replace(/\bSELECT\b/gi, 'SELECT\n    ')
+                     .trim();
+            
+            editor.value = sql;
+        }
+
+        // Auto-save query to localStorage
+        document.getElementById('sqlEditor').addEventListener('input', (e) => {
+            localStorage.setItem('lastQuery', e.target.value);
+        });
+
+        // Restore last query on load
+        window.addEventListener('load', () => {
+            const lastQuery = localStorage.getItem('lastQuery');
+            if (lastQuery) {
+                document.getElementById('sqlEditor').value = lastQuery;
+            }
+        });
+
+        // Keyboard shortcut: Ctrl/Cmd + Enter to execute
+        document.getElementById('sqlEditor').addEventListener('keydown', (e) => {
+            if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+                e.preventDefault();
+                executeQuery();
+            }
+        });
+    </script>
+</body>
+</html>

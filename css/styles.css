@@ -1155,14 +1155,14 @@ tbody tr:hover {
     border-left: 3px solid var(--primary-dark);
 }
 
-/* Enquiry booking (pending) */
-.calendar-booking.enquiry-booking {
+/* Inquiry booking (pending) */
+.calendar-booking.inquiry-booking {
     background: #6b7280;
     border-left: 3px solid #4b5563;
     opacity: 0.85;
 }
 
-.calendar-booking.enquiry-booking:hover {
+.calendar-booking.inquiry-booking:hover {
     background: #4b5563;
     opacity: 1;
 }
