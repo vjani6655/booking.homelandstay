@@ -99,6 +99,10 @@ body {
         display: none;
     }
     
+    .desktop-logout-btn {
+        display: inline-flex !important;
+    }
+    
     .logo {
         margin-right: auto;
     }

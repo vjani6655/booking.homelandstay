@@ -148,6 +148,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $step === 2) {
             throw new Exception('Password must be at least 6 characters');
         }
         
+        // Check if username already exists
+        $stmt = $db->prepare("SELECT COUNT(*) as count FROM users WHERE username = ?");
+        $stmt->execute([$username]);
+        if ($stmt->fetch()['count'] > 0) {
+            throw new Exception("Username '$username' already exists. Please choose a different username or delete the existing database file.");
+        }
+        
         $hashedPassword = password_hash($password, PASSWORD_DEFAULT);
         
         $stmt = $db->prepare("INSERT INTO users (username, password, name) VALUES (?, ?, ?)");

@@ -105,6 +105,7 @@ class App {
                             🔔
                             <span class="notification-badge hidden" id="notificationBadge">0</span>
                         </button>
+                        <button class="btn btn-secondary desktop-logout-btn" id="desktopLogoutBtn" style="display: none;">Logout</button>
                         <button class="hamburger" id="hamburgerBtn">
                             <span></span>
                             <span></span>
@@ -181,6 +182,13 @@ class App {
 
         // Logout
         document.getElementById('logoutBtn').addEventListener('click', async (e) => {
+            e.preventDefault();
+            await fetch('api/auth.php?action=logout', { method: 'POST' });
+            window.location.href = 'login.html';
+        });
+
+        // Desktop Logout
+        document.getElementById('desktopLogoutBtn').addEventListener('click', async (e) => {
             e.preventDefault();
             await fetch('api/auth.php?action=logout', { method: 'POST' });
             window.location.href = 'login.html';
