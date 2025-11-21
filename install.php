@@ -415,9 +415,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $step === 2) {
                     <h3>📋 Before You Begin</h3>
                     <ul>
                         <li>Make sure PHP 7.4 or higher is installed</li>
-                        <li>SQLite extension must be enabled</li>
+                        <li>MySQL database and credentials ready</li>
                         <li>Write permissions on the <code>api/</code> directory</li>
-                        <li>This will create a new database at <code>api/homeland.db</code></li>
+                        <li>This will create tables in your MySQL database</li>
                     </ul>
                 </div>
                 
@@ -485,7 +485,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $step === 2) {
                     <div class="info-box">
                         <h3>✅ What's Been Set Up</h3>
                         <ul>
-                            <li>Database created at <code>api/homeland.db</code></li>
+                            <li>MySQL tables created successfully</li>
                             <li>All required tables created</li>
                             <li>Default partners added (Direct Booking, MakeMyTrip, Airbnb, etc.)</li>
                             <li>Admin account created</li>
