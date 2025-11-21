@@ -21,13 +21,16 @@ jobs:
           username: ${{ secrets.FTP_USERNAME }}
           password: ${{ secrets.FTP_PASSWORD }}
           server-dir: ${{ secrets.FTP_SERVER_DIR }}
+          local-dir: ./
           exclude: |
             **/.git*
             **/.git*/**
+            **/.github/**
             **/node_modules/**
             **/.DS_Store
             **/Thumbs.db
             **/*.md
             **/FIXES_SUMMARY.md
             **/DESKTOP_NAVIGATION_INVOICE_IMPLEMENTATION.md
+            **/DEPLOYMENT.md
             **/README.md
