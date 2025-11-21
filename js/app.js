@@ -2885,6 +2885,14 @@ class App {
                 </form>
                 <div id="passwordMessage" class="hidden"></div>
             </div>
+
+            <div class="card" style="border: 2px solid #ef4444;">
+                <h2 class="card-title" style="color: #ef4444;">⚠️ Danger Zone</h2>
+                <p style="color: #6b7280; margin-bottom: 1rem;">
+                    <strong>Warning:</strong> This action will permanently delete all data including bookings, properties, partners, and users. This action cannot be undone.
+                </p>
+                <button type="button" class="btn btn-danger" id="uninstallBtn">Uninstall Application</button>
+            </div>
         `;
     }
 
@@ -3022,6 +3030,62 @@ class App {
             } catch (error) {
                 this.showToast('Error changing password', 'error');
             }
+        });
+
+        // Uninstall button
+        document.getElementById('uninstallBtn')?.addEventListener('click', () => {
+            const confirmModal = document.createElement('div');
+            confirmModal.className = 'modal active';
+            confirmModal.innerHTML = `
+                <div class="modal-content" style="max-width: 500px;">
+                    <div class="modal-header" style="border-bottom: 2px solid #ef4444;">
+                        <h2 class="modal-title" style="color: #ef4444;">⚠️ Confirm Uninstallation</h2>
+                        <button class="close-btn" onclick="this.closest('.modal').remove()">✕</button>
+                    </div>
+                    <div class="modal-body">
+                        <p style="margin-bottom: 1rem; color: #6b7280;">
+                            <strong style="color: #ef4444;">This action cannot be undone!</strong><br><br>
+                            All data including bookings, properties, partners, and users will be permanently deleted.<br><br>
+                            Type <strong>DELETE ALL DATA</strong> below to confirm:
+                        </p>
+                        <div class="form-group">
+                            <input type="text" id="confirmationText" placeholder="DELETE ALL DATA" style="font-family: monospace;">
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" onclick="this.closest('.modal').remove()">Cancel</button>
+                        <button type="button" class="btn btn-danger" id="confirmUninstallBtn">Uninstall</button>
+                    </div>
+                </div>
+            `;
+            
+            document.body.appendChild(confirmModal);
+            
+            document.getElementById('confirmUninstallBtn').addEventListener('click', async () => {
+                const confirmationText = document.getElementById('confirmationText').value;
+                
+                try {
+                    const response = await fetch('api/uninstall.php', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ confirmation: confirmationText })
+                    });
+                    
+                    const data = await response.json();
+                    
+                    if (data.success) {
+                        confirmModal.remove();
+                        this.showToast('Application uninstalled successfully. Redirecting...', 'success');
+                        setTimeout(() => {
+                            window.location.href = 'install.php';
+                        }, 2000);
+                    } else {
+                        this.showToast(data.message || 'Failed to uninstall', 'error');
+                    }
+                } catch (error) {
+                    this.showToast('Error during uninstallation', 'error');
+                }
+            });
         });
     }
 
