@@ -18,8 +18,10 @@ if ($action === 'dashboard') {
     $pendingRequests = $stmt->fetchAll();
     
     // Get upcoming bookings this month
-    $stmt = $db->prepare("SELECT * FROM bookings WHERE status = 'Confirmed' AND check_in_date LIKE ? AND check_in_date >= ? ORDER BY check_in_date ASC");
-    $stmt->execute([$currentMonth . '%', $today]);
+    $firstDay = date('Y-m-01');
+    $lastDay = date('Y-m-t');
+    $stmt = $db->prepare("SELECT * FROM bookings WHERE status = 'Confirmed' AND check_in_date BETWEEN ? AND ? AND check_in_date >= ? ORDER BY check_in_date ASC");
+    $stmt->execute([$firstDay, $lastDay, $today]);
     $upcomingBookings = $stmt->fetchAll();
     
     // Get pending payments
@@ -29,19 +31,19 @@ if ($action === 'dashboard') {
     $pendingPaymentsCount = count($pendingPaymentBookings);
     
     // Calculate occupancy rate (simplified)
-    $stmt = $db->prepare("SELECT COUNT(*) as count FROM bookings WHERE status = 'Confirmed' AND check_in_date LIKE ?");
-    $stmt->execute([$currentMonth . '%']);
+    $stmt = $db->prepare("SELECT COUNT(*) as count FROM bookings WHERE status = 'Confirmed' AND check_in_date BETWEEN ? AND ?");
+    $stmt->execute([$firstDay, $lastDay]);
     $confirmedCount = $stmt->fetch()['count'];
     $occupancyRate = min(100, $confirmedCount * 10); // Simplified calculation
     
     // Calculate average booking value
-    $stmt = $db->prepare("SELECT AVG(total_amount) as avg FROM bookings WHERE status = 'Confirmed' AND check_in_date LIKE ?");
-    $stmt->execute([$currentMonth . '%']);
+    $stmt = $db->prepare("SELECT AVG(total_amount) as avg FROM bookings WHERE status = 'Confirmed' AND check_in_date BETWEEN ? AND ?");
+    $stmt->execute([$firstDay, $lastDay]);
     $avgBookingValue = (int)($stmt->fetch()['avg'] ?? 0);
     
     // Calculate month revenue
-    $stmt = $db->prepare("SELECT SUM(total_amount) as total FROM bookings WHERE status = 'Confirmed' AND payment_status = 'Paid' AND check_in_date LIKE ?");
-    $stmt->execute([$currentMonth . '%']);
+    $stmt = $db->prepare("SELECT SUM(total_amount) as total FROM bookings WHERE status = 'Confirmed' AND payment_status = 'Paid' AND check_in_date BETWEEN ? AND ?");
+    $stmt->execute([$firstDay, $lastDay]);
     $monthRevenue = (int)($stmt->fetch()['total'] ?? 0);
     
     echo json_encode([
