@@ -52,33 +52,41 @@ if ($confirmationText !== 'DELETE ALL DATA') {
 }
 
 try {
-    // Check if database file exists
-    if (!file_exists(DB_PATH)) {
-        echo json_encode([
-            'success' => false,
-            'message' => 'Database file not found. It may have already been deleted.'
-        ]);
-        exit;
-    }
+    // Load database config
+    $dbConfig = require __DIR__ . '/db_config.php';
+    
+    // Create database connection
+    $dsn = 'mysql:host=' . $dbConfig['host'] . ';port=' . $dbConfig['port'] . ';dbname=' . $dbConfig['database'] . ';charset=' . $dbConfig['charset'];
+    $db = new PDO($dsn, $dbConfig['username'], $dbConfig['password'], [
+        PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION
+    ]);
 
     // Close any open connections by destroying the session
     session_destroy();
 
-    // Delete the database file
-    if (unlink(DB_PATH)) {
-        // Also delete the error log if it exists
-        $errorLogPath = __DIR__ . '/error.log';
-        if (file_exists($errorLogPath)) {
-            @unlink($errorLogPath);
-        }
-
-        echo json_encode([
-            'success' => true,
-            'message' => 'Database deleted successfully. All data has been removed.'
-        ]);
-    } else {
-        throw new Exception('Failed to delete database file. Check file permissions.');
+    // Drop all tables in correct order (respecting foreign keys)
+    $tables = ['guest_ratings', 'notifications', 'bookings', 'properties', 'partners', 'users'];
+    
+    foreach ($tables as $table) {
+        $db->exec("DROP TABLE IF EXISTS `$table`");
     }
+    
+    // Delete the lock file
+    $lockFile = __DIR__ . '/.installed.lock';
+    if (file_exists($lockFile)) {
+        @unlink($lockFile);
+    }
+    
+    // Delete the error log if it exists
+    $errorLogPath = __DIR__ . '/error.log';
+    if (file_exists($errorLogPath)) {
+        @unlink($errorLogPath);
+    }
+
+    echo json_encode([
+        'success' => true,
+        'message' => 'All tables dropped successfully. All data has been removed.'
+    ]);
 
 } catch (Exception $e) {
     error_log('Uninstall error: ' . $e->getMessage());

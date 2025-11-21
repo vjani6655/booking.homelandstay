@@ -37,102 +37,118 @@ $success = '';
 
 // Step 2: Process installation
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && $step === 2) {
-    $dbPath = __DIR__ . '/api/homeland.db';
-    
     try {
-        // Create database
-        $db = new PDO('sqlite:' . $dbPath);
-        $db->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+        // Load database config
+        $dbConfig = require __DIR__ . '/api/db_config.php';
         
-        // Create tables
+        // Create database connection
+        $dsn = 'mysql:host=' . $dbConfig['host'] . ';port=' . $dbConfig['port'] . ';dbname=' . $dbConfig['database'] . ';charset=' . $dbConfig['charset'];
+        $db = new PDO($dsn, $dbConfig['username'], $dbConfig['password'], [
+            PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+            PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC
+        ]);
+        
+        // Create tables using MySQL syntax
         $sql = "
         CREATE TABLE IF NOT EXISTS users (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            username TEXT UNIQUE NOT NULL,
-            password TEXT NOT NULL,
-            name TEXT NOT NULL,
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            username VARCHAR(255) UNIQUE NOT NULL,
+            password VARCHAR(255) NOT NULL,
+            name VARCHAR(255) NOT NULL,
+            phone VARCHAR(50),
             created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-        );
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
         CREATE TABLE IF NOT EXISTS partners (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            name TEXT NOT NULL,
-            contact_person TEXT,
-            email TEXT,
-            phone TEXT,
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            name VARCHAR(255) NOT NULL,
+            commission DECIMAL(5,2) DEFAULT 0,
+            contact_person VARCHAR(255),
+            email VARCHAR(255),
+            phone VARCHAR(50),
             created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-        );
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
         CREATE TABLE IF NOT EXISTS properties (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            name TEXT NOT NULL,
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            name VARCHAR(255) NOT NULL,
             address TEXT,
-            logo TEXT,
-            owner_name TEXT,
-            owner_mobile TEXT,
-            owner_email TEXT,
+            per_day_cost DECIMAL(10,2) DEFAULT 0,
+            per_adult_cost DECIMAL(10,2) DEFAULT 0,
+            per_kid_cost DECIMAL(10,2) DEFAULT 0,
+            extra_adult_cost DECIMAL(10,2) DEFAULT 0,
+            logo VARCHAR(500),
+            owner_name VARCHAR(255),
+            owner_mobile VARCHAR(50),
+            owner_email VARCHAR(255),
             created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-        );
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
         CREATE TABLE IF NOT EXISTS bookings (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            status TEXT DEFAULT 'Enquiry',
-            property_id INTEGER,
-            partner_id INTEGER,
-            booking_reference TEXT,
-            customer_name TEXT NOT NULL,
-            customer_phone TEXT NOT NULL,
-            customer_email TEXT,
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            status VARCHAR(50) DEFAULT 'Enquiry',
+            property_id INT,
+            partner_id INT,
+            booking_reference VARCHAR(100),
+            customer_name VARCHAR(255) NOT NULL,
+            customer_phone VARCHAR(50) NOT NULL,
+            customer_email VARCHAR(255),
+            enquiry_date DATETIME DEFAULT CURRENT_TIMESTAMP,
             check_in_date DATE NOT NULL,
             check_out_date DATE NOT NULL,
-            num_adults INTEGER DEFAULT 1,
-            extra_adults INTEGER DEFAULT 0,
-            num_kids INTEGER DEFAULT 0,
+            num_adults INT DEFAULT 1,
+            extra_adults INT DEFAULT 0,
+            num_kids INT DEFAULT 0,
+            per_night_cost DECIMAL(10,2) DEFAULT 0,
+            per_adult_cost DECIMAL(10,2) DEFAULT 0,
+            per_kid_cost DECIMAL(10,2) DEFAULT 0,
+            discount DECIMAL(10,2) DEFAULT 0,
+            gst DECIMAL(10,2) DEFAULT 0,
+            tax_withhold DECIMAL(10,2) DEFAULT 0,
             message TEXT,
-            total_amount REAL DEFAULT 0,
-            payment_status TEXT DEFAULT 'Pending',
-            payment_method TEXT,
-            amount_paid REAL DEFAULT 0,
+            total_amount DECIMAL(10,2) DEFAULT 0,
+            payment_status VARCHAR(50) DEFAULT 'Pending',
+            payment_method VARCHAR(50),
+            aadhar_proof VARCHAR(500),
+            pan_proof VARCHAR(500),
+            passport_proof VARCHAR(500),
             created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-            updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-            FOREIGN KEY (property_id) REFERENCES properties(id),
-            FOREIGN KEY (partner_id) REFERENCES partners(id)
-        );
+            updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+            FOREIGN KEY (property_id) REFERENCES properties(id) ON DELETE SET NULL,
+            FOREIGN KEY (partner_id) REFERENCES partners(id) ON DELETE SET NULL
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
         CREATE TABLE IF NOT EXISTS notifications (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            type TEXT NOT NULL,
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            type VARCHAR(50) NOT NULL,
+            title VARCHAR(255) NOT NULL,
             message TEXT NOT NULL,
-            booking_id INTEGER,
-            is_read INTEGER DEFAULT 0,
+            booking_id INT,
+            `read` TINYINT(1) DEFAULT 0,
             created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-            FOREIGN KEY (booking_id) REFERENCES bookings(id)
-        );
+            FOREIGN KEY (booking_id) REFERENCES bookings(id) ON DELETE CASCADE
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-        CREATE TABLE IF NOT EXISTS ratings (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            booking_id INTEGER NOT NULL,
-            rating INTEGER NOT NULL,
-            review TEXT,
+        CREATE TABLE IF NOT EXISTS guest_ratings (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            booking_id INT NOT NULL,
+            rating INT CHECK(rating >= 1 AND rating <= 5),
+            notes TEXT,
             created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-            FOREIGN KEY (booking_id) REFERENCES bookings(id)
-        );
-
-        CREATE TABLE IF NOT EXISTS line_items (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            booking_id INTEGER NOT NULL,
-            description TEXT NOT NULL,
-            amount REAL NOT NULL,
-            type TEXT DEFAULT 'charge',
-            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-            FOREIGN KEY (booking_id) REFERENCES bookings(id)
-        );
+            FOREIGN KEY (booking_id) REFERENCES bookings(id) ON DELETE CASCADE
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
         ";
         
-        $db->exec($sql);
+        // Execute each statement separately for MySQL
+        foreach (explode(';', $sql) as $statement) {
+            $statement = trim($statement);
+            if (!empty($statement)) {
+                $db->exec($statement);
+            }
+        }
         
         // Insert only Direct Booking partner (ID 1)
-        $stmt = $db->prepare("INSERT OR IGNORE INTO partners (id, name, commission) VALUES (?, ?, ?)");
+        $stmt = $db->prepare("INSERT IGNORE INTO partners (id, name, commission) VALUES (?, ?, ?)");
         $stmt->execute([1, 'Direct Booking', 0]);
         
         // Create admin user
@@ -152,16 +168,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $step === 2) {
         $stmt = $db->prepare("SELECT COUNT(*) as count FROM users WHERE username = ?");
         $stmt->execute([$username]);
         if ($stmt->fetch()['count'] > 0) {
-            throw new Exception("Username '$username' already exists. Please choose a different username or delete the existing database file.");
+            throw new Exception("Username '$username' already exists. Please choose a different username or delete existing data from the database.");
         }
         
         $hashedPassword = password_hash($password, PASSWORD_DEFAULT);
         
         $stmt = $db->prepare("INSERT INTO users (username, password, name) VALUES (?, ?, ?)");
         $stmt->execute([$username, $hashedPassword, $name]);
-        
-        // Set proper permissions
-        chmod($dbPath, 0666);
         
         // Create lock file
         file_put_contents($lockFile, date('Y-m-d H:i:s'));

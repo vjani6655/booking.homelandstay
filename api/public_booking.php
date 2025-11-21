@@ -5,7 +5,13 @@ session_start();
 header('Content-Type: application/json');
 
 // Database Configuration
-define('DB_PATH', __DIR__ . '/homeland.db');
+$dbConfig = require __DIR__ . '/db_config.php';
+define('DB_HOST', $dbConfig['host']);
+define('DB_PORT', $dbConfig['port']);
+define('DB_NAME', $dbConfig['database']);
+define('DB_USER', $dbConfig['username']);
+define('DB_PASS', $dbConfig['password']);
+define('DB_CHARSET', $dbConfig['charset']);
 
 // Constants
 define('MAX_GUESTS', 20);
@@ -14,9 +20,12 @@ define('MAX_BOOKING_DAYS', 90);
 
 function getDB() {
     try {
-        $db = new PDO('sqlite:' . DB_PATH);
-        $db->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-        $db->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_ASSOC);
+        $dsn = 'mysql:host=' . DB_HOST . ';port=' . DB_PORT . ';dbname=' . DB_NAME . ';charset=' . DB_CHARSET;
+        $db = new PDO($dsn, DB_USER, DB_PASS, [
+            PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+            PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+            PDO::ATTR_EMULATE_PREPARES => false
+        ]);
         return $db;
     } catch (PDOException $e) {
         error_log('Database connection failed: ' . $e->getMessage());

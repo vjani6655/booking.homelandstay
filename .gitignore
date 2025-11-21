@@ -2,6 +2,7 @@
 *.db
 *.sqlite
 *.sqlite3
+api/db_config.php
 
 # Logs
 *.log

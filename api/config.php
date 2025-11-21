@@ -6,7 +6,13 @@ ini_set('log_errors', 1); // Log errors instead
 ini_set('error_log', __DIR__ . '/error.log'); // Error log file
 
 // Database Configuration
-define('DB_PATH', __DIR__ . '/homeland.db');
+$dbConfig = require __DIR__ . '/db_config.php';
+define('DB_HOST', $dbConfig['host']);
+define('DB_PORT', $dbConfig['port']);
+define('DB_NAME', $dbConfig['database']);
+define('DB_USER', $dbConfig['username']);
+define('DB_PASS', $dbConfig['password']);
+define('DB_CHARSET', $dbConfig['charset']);
 
 // Security Headers
 header('X-Frame-Options: DENY');
@@ -28,9 +34,12 @@ if (session_status() === PHP_SESSION_NONE) {
 // Database Connection
 function getDB() {
     try {
-        $db = new PDO('sqlite:' . DB_PATH);
-        $db->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-        $db->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_ASSOC);
+        $dsn = 'mysql:host=' . DB_HOST . ';port=' . DB_PORT . ';dbname=' . DB_NAME . ';charset=' . DB_CHARSET;
+        $db = new PDO($dsn, DB_USER, DB_PASS, [
+            PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+            PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+            PDO::ATTR_EMULATE_PREPARES => false
+        ]);
         return $db;
     } catch (PDOException $e) {
         error_log('Database connection failed: ' . $e->getMessage());
@@ -58,87 +67,96 @@ function initializeDatabase() {
     
     // Users table
     $db->exec("CREATE TABLE IF NOT EXISTS users (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        username TEXT UNIQUE NOT NULL,
-        password TEXT NOT NULL,
-        name TEXT,
-        phone TEXT,
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        username VARCHAR(255) UNIQUE NOT NULL,
+        password VARCHAR(255) NOT NULL,
+        name VARCHAR(255),
+        phone VARCHAR(50),
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-    )");
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
     
     // Properties table
     $db->exec("CREATE TABLE IF NOT EXISTS properties (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        name TEXT NOT NULL,
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        name VARCHAR(255) NOT NULL,
         address TEXT,
-        per_day_cost REAL DEFAULT 0,
-        per_adult_cost REAL DEFAULT 0,
-        per_kid_cost REAL DEFAULT 0,
-        logo TEXT,
+        per_day_cost DECIMAL(10,2) DEFAULT 0,
+        per_adult_cost DECIMAL(10,2) DEFAULT 0,
+        per_kid_cost DECIMAL(10,2) DEFAULT 0,
+        extra_adult_cost DECIMAL(10,2) DEFAULT 0,
+        logo VARCHAR(500),
+        owner_name VARCHAR(255),
+        owner_mobile VARCHAR(50),
+        owner_email VARCHAR(255),
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-    )");
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
     
     // Partners table
     $db->exec("CREATE TABLE IF NOT EXISTS partners (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        name TEXT NOT NULL,
-        commission REAL DEFAULT 0,
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        name VARCHAR(255) NOT NULL,
+        commission DECIMAL(5,2) DEFAULT 0,
+        contact_person VARCHAR(255),
+        email VARCHAR(255),
+        phone VARCHAR(50),
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-    )");
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
     
     // Bookings table
     $db->exec("CREATE TABLE IF NOT EXISTS bookings (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        status TEXT NOT NULL,
-        partner_id INTEGER,
-        booking_reference TEXT,
-        customer_name TEXT NOT NULL,
-        customer_phone TEXT NOT NULL,
-        customer_email TEXT NOT NULL,
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        status VARCHAR(50) NOT NULL,
+        property_id INT,
+        partner_id INT,
+        booking_reference VARCHAR(100),
+        customer_name VARCHAR(255) NOT NULL,
+        customer_phone VARCHAR(50) NOT NULL,
+        customer_email VARCHAR(255) NOT NULL,
         enquiry_date DATETIME DEFAULT CURRENT_TIMESTAMP,
         check_in_date DATE NOT NULL,
         check_out_date DATE NOT NULL,
-        num_adults INTEGER DEFAULT 1,
-        extra_adults INTEGER DEFAULT 0,
-        num_kids INTEGER DEFAULT 0,
-        per_night_cost REAL DEFAULT 0,
-        per_adult_cost REAL DEFAULT 0,
-        per_kid_cost REAL DEFAULT 0,
-        discount REAL DEFAULT 0,
-        gst REAL DEFAULT 0,
-        tax_withhold REAL DEFAULT 0,
-        total_amount REAL DEFAULT 0,
-        payment_status TEXT DEFAULT 'Pending',
-        payment_method TEXT,
-        aadhar_proof TEXT,
-        pan_proof TEXT,
-        passport_proof TEXT,
+        num_adults INT DEFAULT 1,
+        extra_adults INT DEFAULT 0,
+        num_kids INT DEFAULT 0,
+        per_night_cost DECIMAL(10,2) DEFAULT 0,
+        per_adult_cost DECIMAL(10,2) DEFAULT 0,
+        per_kid_cost DECIMAL(10,2) DEFAULT 0,
+        discount DECIMAL(10,2) DEFAULT 0,
+        gst DECIMAL(10,2) DEFAULT 0,
+        tax_withhold DECIMAL(10,2) DEFAULT 0,
+        total_amount DECIMAL(10,2) DEFAULT 0,
+        payment_status VARCHAR(50) DEFAULT 'Pending',
+        payment_method VARCHAR(50),
+        aadhar_proof VARCHAR(500),
+        pan_proof VARCHAR(500),
+        passport_proof VARCHAR(500),
         message TEXT,
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-        FOREIGN KEY (partner_id) REFERENCES partners(id)
-    )");
+        FOREIGN KEY (partner_id) REFERENCES partners(id) ON DELETE SET NULL,
+        FOREIGN KEY (property_id) REFERENCES properties(id) ON DELETE SET NULL
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
     
     // Notifications table
     $db->exec("CREATE TABLE IF NOT EXISTS notifications (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        type TEXT NOT NULL,
-        title TEXT NOT NULL,
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        type VARCHAR(50) NOT NULL,
+        title VARCHAR(255) NOT NULL,
         message TEXT NOT NULL,
-        booking_id INTEGER,
-        read INTEGER DEFAULT 0,
+        booking_id INT,
+        `read` TINYINT(1) DEFAULT 0,
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-        FOREIGN KEY (booking_id) REFERENCES bookings(id)
-    )");
+        FOREIGN KEY (booking_id) REFERENCES bookings(id) ON DELETE CASCADE
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
     
     // Guest Ratings table
     $db->exec("CREATE TABLE IF NOT EXISTS guest_ratings (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        booking_id INTEGER NOT NULL,
-        rating INTEGER CHECK(rating >= 1 AND rating <= 5),
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        booking_id INT NOT NULL,
+        rating INT CHECK(rating >= 1 AND rating <= 5),
         notes TEXT,
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-        FOREIGN KEY (booking_id) REFERENCES bookings(id)
-    )");
+        FOREIGN KEY (booking_id) REFERENCES bookings(id) ON DELETE CASCADE
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
     
     // Create default Direct Booking partner with ID 1 if not exists
     $stmt = $db->prepare("SELECT COUNT(*) as count FROM partners WHERE id = 1");
@@ -230,7 +248,13 @@ function validateContentType() {
 }
 
 // Initialize database on first load
-if (!file_exists(DB_PATH)) {
-    initializeDatabase();
+$lockFile = __DIR__ . '/.installed.lock';
+if (file_exists($lockFile)) {
+    // Tables already created, just ensure connection works
+    try {
+        getDB();
+    } catch (Exception $e) {
+        error_log('Database connection check failed: ' . $e->getMessage());
+    }
 }
 ?>
