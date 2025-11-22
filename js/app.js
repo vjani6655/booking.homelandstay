@@ -831,7 +831,7 @@ class App {
 
                         <div class="form-row">
                             <div class="form-group">
-                                <label>Discount</label>
+                                <label>Partner fee</label>
                                 <div style="display: flex; gap: 0.5rem;">
                                     <input type="number" id="addDiscount" step="0.01" min="0" value="0" style="flex: 1;">
                                     <select id="addDiscountType" style="width: 80px;">
@@ -1029,11 +1029,11 @@ class App {
                         <span>₹${subtotal.toFixed(2)}</span>
                     </div>
                     <div style="display: flex; justify-content: space-between; color: var(--success);">
-                        <span>Discount (${discount}${discountType === 'percentage' ? '%' : '₹'}):</span>
+                        <span>Partner fee (${discount}${discountType === 'percentage' ? '%' : '₹'}):</span>
                         <span>- ₹${discountAmount.toFixed(2)}</span>
                     </div>
                     <div style="display: flex; justify-content: space-between; font-weight: 600;">
-                        <span>After Discount:</span>
+                        <span>After Partner fee:</span>
                         <span>₹${afterDiscount.toFixed(2)}</span>
                     </div>
                     <div style="display: flex; justify-content: space-between;">
@@ -1383,7 +1383,7 @@ class App {
                         <div class="form-row">
                             <div class="form-group">
                                 <label style="display: flex; align-items: center; gap: 0.5rem;">
-                                    Discount
+                                    Partner fee
                                     <select id="editDiscountType" style="width: auto; padding: 0.25rem 0.5rem; font-size: 0.9rem;">
                                         <option value="fixed" ${(booking.discount_type || 'fixed') === 'fixed' ? 'selected' : ''}>₹</option>
                                         <option value="percentage" ${booking.discount_type === 'percentage' ? 'selected' : ''}>%</option>
@@ -1445,11 +1445,11 @@ class App {
                                 <strong>₹<span id="calcSubtotal">0</span></strong>
                             </div>
                             <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem; color: var(--success);">
-                                <span>Discount (<span id="discountPercent">0</span>%):</span>
+                                <span>Partner fee (<span id="discountPercent">0</span>%):</span>
                                 <strong>- ₹<span id="calcDiscountAmount">0</span></strong>
                             </div>
                             <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
-                                <span>After Discount:</span>
+                                <span>After Partner fee:</span>
                                 <strong>₹<span id="calcAfterDiscount">0</span></strong>
                             </div>
                             <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
@@ -2159,11 +2159,11 @@ class App {
                             </tr>
                             ${discount > 0 ? `
                             <tr style="color: #27ae60;">
-                                <td colspan="3" style="padding: 12px; text-align: right; border: 1px solid #dee2e6;">Discount ${discountType === 'percentage' ? '(' + discount + '%)' : '(Fixed)'}:</td>
+                                <td colspan="3" style="padding: 12px; text-align: right; border: 1px solid #dee2e6;">Partner fee:</td>
                                 <td style="padding: 12px; text-align: right; border: 1px solid #dee2e6;">- ₹${discountAmount.toFixed(0)}</td>
                             </tr>
                             <tr style="background: #f8f9fa;">
-                                <td colspan="3" style="padding: 12px; text-align: right; border: 1px solid #dee2e6; font-weight: bold;">After Discount:</td>
+                                <td colspan="3" style="padding: 12px; text-align: right; border: 1px solid #dee2e6; font-weight: bold;">After Partner fee:</td>
                                 <td style="padding: 12px; text-align: right; border: 1px solid #dee2e6; font-weight: bold;">₹${afterDiscount.toFixed(0)}</td>
                             </tr>
                             ` : ''}
@@ -2175,7 +2175,7 @@ class App {
                             ` : ''}
                             ${taxWithhold > 0 ? `
                             <tr style="color: #e74c3c;">
-                                <td colspan="3" style="padding: 12px; text-align: right; border: 1px solid #dee2e6;">Tax Withhold ${taxWithholdType === 'percentage' ? '(' + taxWithhold + '%)' : '(Fixed)'}:</td>
+                                <td colspan="3" style="padding: 12px; text-align: right; border: 1px solid #dee2e6;">Tax Withhold:</td>
                                 <td style="padding: 12px; text-align: right; border: 1px solid #dee2e6;">- ₹${taxWithholdAmount.toFixed(0)}</td>
                             </tr>
                             ` : ''}
