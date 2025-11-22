@@ -38,7 +38,7 @@ if (empty($sql)) {
 }
 
 try {
-    $conn = getDBConnection();
+    $conn = getDB();
     
     // Security check: Prevent dangerous operations
     $dangerous_keywords = ['DROP DATABASE', 'DROP USER', 'GRANT', 'REVOKE'];
@@ -56,10 +56,10 @@ try {
     $query_type = strtoupper(substr(ltrim($sql), 0, 6));
     
     // Execute the query
-    $result = $conn->query($sql);
+    $stmt = $conn->query($sql);
     
-    if ($result === false) {
-        throw new Exception($conn->error);
+    if ($stmt === false) {
+        throw new Exception("Query failed");
     }
     
     $response = ['success' => true];
@@ -68,17 +68,17 @@ try {
     if ($query_type === 'SELECT' || $query_type === 'SHOW' || $query_type === 'DESC' || $query_type === 'DESCRI') {
         // Fetch results for SELECT queries
         $rows = [];
-        while ($row = $result->fetch_assoc()) {
+        while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
             $rows[] = $row;
         }
         $response['results'] = $rows;
         $response['message'] = 'Query executed successfully';
     } else {
         // For INSERT, UPDATE, DELETE, ALTER, CREATE, DROP
-        $response['affected_rows'] = $conn->affected_rows;
+        $response['affected_rows'] = $stmt->rowCount();
         
         if ($query_type === 'INSERT') {
-            $response['insert_id'] = $conn->insert_id;
+            $response['insert_id'] = $conn->lastInsertId();
             $response['message'] = 'Data inserted successfully';
         } elseif ($query_type === 'UPDATE') {
             $response['message'] = 'Data updated successfully';
@@ -95,10 +95,6 @@ try {
         }
     }
     
-    if (is_object($result)) {
-        $result->free();
-    }
-    
     // Clean any output buffer and send JSON
     ob_clean();
     echo json_encode($response);
@@ -112,6 +108,5 @@ try {
     ]);
 }
 
-$conn->close();
 ob_end_flush();
 ?>
