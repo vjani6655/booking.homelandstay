@@ -775,7 +775,6 @@ class App {
                                 <small class="text-secondary" id="checkOutDay" style="display: block; margin-top: 0.25rem;"></small>
                             </div>
                         </div>
-                        <div id="durationDisplay" style="text-align: center; color: var(--success); font-weight: 600; margin-top: 0.5rem;"></div>
 
                         <div class="form-row">
                             <div class="form-group">
@@ -889,7 +888,6 @@ class App {
                     document.getElementById('perKidCost').value = perKidCost;
                     
                     console.log('Auto-populated pricing from property:', {
-                        perDayCost,
                         perAdultCost,
                         extraAdultCost,
                         perKidCost
@@ -945,7 +943,6 @@ class App {
                 document.getElementById('sendQuoteBtn').style.display = 'none';
                 document.getElementById('checkInDay').textContent = '';
                 document.getElementById('checkOutDay').textContent = '';
-                document.getElementById('durationDisplay').textContent = '';
                 return null;
             }
 
@@ -957,7 +954,6 @@ class App {
             const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
             document.getElementById('checkInDay').textContent = `📅 Day: ${days[checkInDate.getDay()]}`;
             document.getElementById('checkOutDay').textContent = `📅 Day: ${days[checkOutDate.getDay()]}`;
-            document.getElementById('durationDisplay').textContent = nights > 0 ? `🏨 Duration: ${nights} night${nights !== 1 ? 's' : ''}` : '';
 
             if (nights <= 0) {
                 document.getElementById('addPricingBreakdown').style.display = 'none';
@@ -1323,10 +1319,12 @@ class App {
                             <div class="form-group">
                                 <label>Check-in Date *</label>
                                 <input type="date" id="editCheckIn" value="${booking.check_in_date}" required>
+                                <small class="text-secondary" id="editCheckInDay" style="display: block; margin-top: 0.25rem;"></small>
                             </div>
                             <div class="form-group">
                                 <label>Check-out Date *</label>
                                 <input type="date" id="editCheckOut" value="${booking.check_out_date}" required>
+                                <small class="text-secondary" id="editCheckOutDay" style="display: block; margin-top: 0.25rem;"></small>
                             </div>
                         </div>
                         
@@ -1560,7 +1558,24 @@ class App {
         
         // Auto-calculate pricing
         const calculateTotal = () => {
-            const nights = Math.ceil((new Date(document.getElementById('editCheckOut').value) - new Date(document.getElementById('editCheckIn').value)) / (1000 * 60 * 60 * 24));
+            const checkIn = document.getElementById('editCheckIn').value;
+            const checkOut = document.getElementById('editCheckOut').value;
+            
+            if (!checkIn || !checkOut) {
+                document.getElementById('editCheckInDay').textContent = '';
+                document.getElementById('editCheckOutDay').textContent = '';
+                return 0;
+            }
+            
+            const checkInDate = new Date(checkIn);
+            const checkOutDate = new Date(checkOut);
+            const nights = Math.ceil((checkOutDate - checkInDate) / (1000 * 60 * 60 * 24));
+            
+            // Show day names
+            const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+            document.getElementById('editCheckInDay').textContent = `📅 Day: ${days[checkInDate.getDay()]}`;
+            document.getElementById('editCheckOutDay').textContent = `📅 Day: ${days[checkOutDate.getDay()]}`;
+            
             const totalAdults = parseInt(document.getElementById('editAdults').value) || 0;
             const primaryAdults = totalAdults > 0 ? 1 : 0;
             const extraAdultsCount = totalAdults > 1 ? totalAdults - 1 : 0;
@@ -1640,7 +1655,7 @@ class App {
             // Calculate total
             const total = afterDiscount + gstAmount - taxWithholdAmount;
             document.getElementById('calcTotal').textContent = total.toFixed(0);
-            document.getElementById('totalDisplay').textContent = `Total: ₹${total.toFixed(0)}`;
+            document.getElementById('totalDisplay').innerHTML = `<div>Total: ₹${total.toFixed(0)}</div><div style="font-size: 0.9rem; font-weight: 400; color: var(--text-secondary);">${nights} night${nights !== 1 ? 's' : ''}</div>`;
             
             // Update remaining amount if partial paid
             const amountPaid = parseFloat(document.getElementById('editAmountPaid')?.value) || 0;
