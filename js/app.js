@@ -170,9 +170,11 @@ class App {
         // Navigation - Desktop
         document.querySelectorAll('.desktop-nav .nav-link').forEach(link => {
             link.addEventListener('click', (e) => {
-                e.preventDefault();
                 const page = e.target.dataset.page;
-                this.loadPage(page);
+                if (page) {
+                    e.preventDefault();
+                    this.loadPage(page);
+                }
             });
         });
         
