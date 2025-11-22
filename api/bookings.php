@@ -100,7 +100,13 @@ if ($action === 'calendar') {
     requireAuth();
     
     $db = getDB();
-    $stmt = $db->prepare("SELECT * FROM bookings WHERE status IN ('Confirmed', 'Enquiry', 'Personal') AND check_out_date >= DATE_SUB(CURDATE(), INTERVAL 30 DAY)");
+    $stmt = $db->prepare("
+        SELECT b.*, p.name as partner_name 
+        FROM bookings b 
+        LEFT JOIN partners p ON b.partner_id = p.id 
+        WHERE b.status IN ('Confirmed', 'Enquiry', 'Personal') 
+        AND b.check_out_date >= DATE_SUB(CURDATE(), INTERVAL 30 DAY)
+    ");
     $stmt->execute();
     $bookings = $stmt->fetchAll();
     
