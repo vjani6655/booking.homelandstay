@@ -1596,13 +1596,6 @@ class App {
             const taxWithhold = parseFloat(document.getElementById('editTaxWithhold')?.value) || 0;
             const taxWithholdType = document.getElementById('editTaxWithholdType')?.value || 'fixed';
             
-            console.log('Edit Modal Calculation:', {
-                discount, discountType,
-                gst, gstType,
-                taxWithhold, taxWithholdType,
-                subtotal
-            });
-            
             // Update displays
             document.getElementById('extraAdultsCalc').textContent = extraAdultsCount;
             document.getElementById('calcNights').textContent = nights;
@@ -1624,6 +1617,13 @@ class App {
             // Calculate subtotal
             const subtotal = primaryAdultTotal + extraAdultsTotal + kidsTotal;
             document.getElementById('calcSubtotal').textContent = subtotal.toFixed(0);
+            
+            console.log('Edit Modal Calculation:', {
+                discount, discountType,
+                gst, gstType,
+                taxWithhold, taxWithholdType,
+                subtotal
+            });
             
             // Calculate discount
             let discountAmount = 0;
