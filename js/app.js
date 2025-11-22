@@ -759,8 +759,8 @@ class App {
                         </div>
 
                         <div class="form-group">
-                            <label>State</label>
-                            <input type="text" id="customerState" placeholder="e.g., Maharashtra">
+                            <label>State and city</label>
+                            <input type="text" id="customerState" placeholder="e.g., Maharashtra, Mumbai or California, Los Angeles">
                         </div>
 
                         <div class="form-row">
@@ -793,15 +793,9 @@ class App {
 
                         <h3 style="margin: 1.5rem 0 1rem; color: var(--primary);">Pricing Details</h3>
                         
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label>Per Night Cost (₹)</label>
-                                <input type="number" id="perNightCost" step="0.01" min="0" value="0" placeholder="Auto-filled from property">
-                            </div>
-                            <div class="form-group">
-                                <label>Per Kid Cost (₹)</label>
-                                <input type="number" id="perKidCost" step="0.01" min="0" value="0" placeholder="Auto-filled from property">
-                            </div>
+                        <div class="form-group">
+                            <label>Per Kid Cost (₹)</label>
+                            <input type="number" id="perKidCost" step="0.01" min="0" value="0" placeholder="Auto-filled from property">
                         </div>
 
                         <div class="form-row">
@@ -883,12 +877,10 @@ class App {
                 const property = properties.find(p => p.id == selectedPropertyId);
                 if (property) {
                     // Parse values as floats to handle decimal numbers correctly
-                    const perDayCost = parseFloat(property.per_day_cost) || 0;
                     const perAdultCost = parseFloat(property.per_adult_cost) || 0;
                     const extraAdultCost = parseFloat(property.extra_adult_cost) || 0;
                     const perKidCost = parseFloat(property.per_kid_cost) || 0;
                     
-                    document.getElementById('perNightCost').value = perDayCost;
                     document.getElementById('primaryAdultCost').value = perAdultCost;
                     document.getElementById('extraAdultCost').value = extraAdultCost;
                     document.getElementById('perKidCost').value = perKidCost;
@@ -933,7 +925,6 @@ class App {
             const checkOut = document.getElementById('checkOut').value;
             const numAdults = parseInt(document.getElementById('adults').value) || 1;
             const numKids = parseInt(document.getElementById('kids').value) || 0;
-            const perNightCost = parseFloat(document.getElementById('perNightCost').value) || 0;
             const primaryAdultCost = parseFloat(document.getElementById('primaryAdultCost').value) || 0;
             const extraAdultCost = parseFloat(document.getElementById('extraAdultCost').value) || 0;
             const perKidCost = parseFloat(document.getElementById('perKidCost').value) || 0;
@@ -965,12 +956,11 @@ class App {
 
             const extraAdults = Math.max(0, numAdults - 1);
 
-            const accommodationTotal = nights * perNightCost;
             const primaryAdultTotal = nights * primaryAdultCost;
             const extraAdultsTotal = nights * extraAdults * extraAdultCost;
             const kidsTotal = nights * numKids * perKidCost;
 
-            const subtotal = accommodationTotal + primaryAdultTotal + extraAdultsTotal + kidsTotal;
+            const subtotal = primaryAdultTotal + extraAdultsTotal + kidsTotal;
 
             const discountAmount = discountType === 'percentage' 
                 ? (subtotal * discount / 100)
@@ -996,10 +986,6 @@ class App {
                     <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
                         <span style="font-weight: 600;">Nights:</span>
                         <span>${nights}</span>
-                    </div>
-                    <div style="display: flex; justify-content: space-between;">
-                        <span>Accommodation (${nights} × ₹${perNightCost.toFixed(2)}):</span>
-                        <span>₹${accommodationTotal.toFixed(2)}</span>
                     </div>
                     <div style="display: flex; justify-content: space-between;">
                         <span>Primary Adult (${nights} × ₹${primaryAdultCost.toFixed(2)}):</span>
@@ -1058,7 +1044,7 @@ class App {
         };
 
         // Add change listeners to recalculate
-        ['checkIn', 'checkOut', 'adults', 'kids', 'perNightCost', 'primaryAdultCost', 'extraAdultCost', 'perKidCost', 'addDiscount', 'addDiscountType', 'addGST', 'addGSTType', 'addGSTOperation', 'addTaxWithhold', 'addTaxWithholdType'].forEach(id => {
+        ['checkIn', 'checkOut', 'adults', 'kids', 'primaryAdultCost', 'extraAdultCost', 'perKidCost', 'addDiscount', 'addDiscountType', 'addGST', 'addGSTType', 'addGSTOperation', 'addTaxWithhold', 'addTaxWithholdType'].forEach(id => {
             const element = document.getElementById(id);
             if (element) {
                 element.addEventListener('change', calculateAddBookingTotal);
@@ -1125,17 +1111,15 @@ class App {
             }
 
             // Calculate total
-            const perNightCost = parseFloat(document.getElementById('perNightCost').value) || 0;
             const primaryAdultCost = parseFloat(document.getElementById('primaryAdultCost').value) || 0;
             const extraAdultCost = parseFloat(document.getElementById('extraAdultCost').value) || 0;
             const perKidCost = parseFloat(document.getElementById('perKidCost').value) || 0;
             const extraAdults = Math.max(0, numAdults - 1);
             
-            const accommodationTotal = nights * perNightCost;
             const primaryAdultTotal = nights * primaryAdultCost;
             const extraAdultsTotal = nights * extraAdults * extraAdultCost;
             const kidsTotal = nights * numKids * perKidCost;
-            const subtotal = accommodationTotal + primaryAdultTotal + extraAdultsTotal + kidsTotal;
+            const subtotal = primaryAdultTotal + extraAdultsTotal + kidsTotal;
 
             const discount = parseFloat(document.getElementById('addDiscount').value) || 0;
             const discountType = document.getElementById('addDiscountType').value;
@@ -1171,7 +1155,6 @@ class App {
                 check_out_date: checkOut,
                 num_adults: numAdults,
                 num_kids: numKids,
-                per_night_cost: perNightCost,
                 per_adult_cost: primaryAdultCost,
                 extra_adult_cost: extraAdultCost,
                 per_kid_cost: perKidCost,
@@ -1243,7 +1226,6 @@ class App {
                     console.log('Found property:', property);
                     if (property) {
                         propertyPricing = {
-                            per_day_cost: parseFloat(property.per_day_cost) || 0,
                             per_adult_cost: parseFloat(property.per_adult_cost) || 0,
                             extra_adult_cost: parseFloat(property.extra_adult_cost) || 0,
                             per_kid_cost: parseFloat(property.per_kid_cost) || 0
@@ -1260,9 +1242,6 @@ class App {
         
         // Use property pricing if booking pricing is not set (0 or null)
         // Need to check for 0 values properly since '0.00' is truthy
-        const perNightCost = (booking.per_night_cost && parseFloat(booking.per_night_cost) > 0) 
-            ? parseFloat(booking.per_night_cost) 
-            : (propertyPricing?.per_day_cost || 0);
         const perAdultCost = (booking.per_adult_cost && parseFloat(booking.per_adult_cost) > 0) 
             ? parseFloat(booking.per_adult_cost) 
             : (propertyPricing?.per_adult_cost || 0);
@@ -1270,12 +1249,10 @@ class App {
             ? parseFloat(booking.extra_adult_cost) 
             : (propertyPricing?.extra_adult_cost || 0);
         const perKidCost = (booking.per_kid_cost && parseFloat(booking.per_kid_cost) > 0) 
-            ? parseFloat(booking.per_kid_cost) 
+            ? parseFloat(booking.per_kid_cost)
             : (propertyPricing?.per_kid_cost || 0);
         
-        console.log('Final pricing values:', { perNightCost, perAdultCost, extraAdultCost, perKidCost });
-        
-        const nights = Math.ceil((new Date(booking.check_out_date) - new Date(booking.check_in_date)) / (1000 * 60 * 60 * 24));
+        console.log('Final pricing values:', { perAdultCost, extraAdultCost, perKidCost });        const nights = Math.ceil((new Date(booking.check_out_date) - new Date(booking.check_in_date)) / (1000 * 60 * 60 * 24));
         
         // Calculate primary and extra adults
         const primaryAdults = booking.num_adults > 0 ? 1 : 0;
@@ -1360,15 +1337,9 @@ class App {
                         
                         <hr style="margin: 1.5rem 0;">
                         <h3 style="margin-bottom: 1rem; color: var(--primary);">Pricing Details</h3>
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label>Per Night Cost (₹) *</label>
-                                <input type="number" id="editPerNight" value="${perNightCost}" step="0.01" min="0" required>
-                            </div>
-                            <div class="form-group">
-                                <label>Per Kid Cost (₹) *</label>
-                                <input type="number" id="editPerKid" value="${perKidCost}" step="0.01" min="0" required>
-                            </div>
+                        <div class="form-group">
+                            <label>Per Kid Cost (₹) *</label>
+                            <input type="number" id="editPerKid" value="${perKidCost}" step="0.01" min="0" required>
                         </div>
                         <div class="form-row">
                             <div class="form-group">
@@ -1425,10 +1396,6 @@ class App {
                             <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
                                 <span>Nights:</span>
                                 <strong><span id="calcNights">${nights}</span></strong>
-                            </div>
-                            <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
-                                <span>Accommodation (<span id="calcNights2">${nights}</span> × ₹<span id="perNightDisplay">0</span>):</span>
-                                <strong>₹<span id="calcAccommodation">0</span></strong>
                             </div>
                             <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
                                 <span>Primary Adult (1 × ₹<span id="primaryAdultDisplay">0</span>):</span>
@@ -1530,7 +1497,6 @@ class App {
             check_out_date: booking.check_out_date,
             num_adults: booking.num_adults,
             num_kids: booking.num_kids,
-            per_night_cost: booking.per_night_cost,
             per_adult_cost: booking.per_adult_cost,
             extra_adult_cost: booking.extra_adult_cost,
             per_kid_cost: booking.per_kid_cost,
@@ -1556,7 +1522,6 @@ class App {
                 document.getElementById('editCheckOut').value !== originalData.check_out_date ||
                 parseInt(document.getElementById('editAdults').value) !== parseInt(originalData.num_adults) ||
                 parseInt(document.getElementById('editKids').value) !== parseInt(originalData.num_kids) ||
-                parseFloat(document.getElementById('editPerNight')?.value || 0) !== parseFloat(originalData.per_night_cost || 0) ||
                 parseFloat(document.getElementById('editPrimaryAdult')?.value || 0) !== parseFloat(originalData.per_adult_cost || 0) ||
                 parseFloat(document.getElementById('editExtraAdult')?.value || 0) !== parseFloat(originalData.extra_adult_cost || 0) ||
                 parseFloat(document.getElementById('editPerKid')?.value || 0) !== parseFloat(originalData.per_kid_cost || 0) ||
@@ -1589,7 +1554,6 @@ class App {
             const extraAdultsCount = totalAdults > 1 ? totalAdults - 1 : 0;
             const kids = parseInt(document.getElementById('editKids').value) || 0;
             
-            const perNight = parseFloat(document.getElementById('editPerNight')?.value) || 0;
             const primaryAdultCost = parseFloat(document.getElementById('editPrimaryAdult')?.value) || 0;
             const extraAdultCost = parseFloat(document.getElementById('editExtraAdult')?.value) || 0;
             const perKid = parseFloat(document.getElementById('editPerKid')?.value) || 0;
@@ -1605,27 +1569,23 @@ class App {
             // Update displays
             document.getElementById('extraAdultsCalc').textContent = extraAdultsCount;
             document.getElementById('calcNights').textContent = nights;
-            document.getElementById('calcNights2').textContent = nights;
             document.getElementById('calcExtraAdultsCount').textContent = extraAdultsCount;
             document.getElementById('calcKidsCount').textContent = kids;
-            document.getElementById('perNightDisplay').textContent = perNight.toFixed(0);
             document.getElementById('primaryAdultDisplay').textContent = primaryAdultCost.toFixed(0);
             document.getElementById('extraAdultDisplay').textContent = extraAdultCost.toFixed(0);
             document.getElementById('perKidDisplay').textContent = perKid.toFixed(0);
             
             // Calculate line items
-            const accommodationCost = perNight * nights;
             const primaryAdultTotal = primaryAdultCost * primaryAdults;
             const extraAdultsTotal = extraAdultCost * extraAdultsCount;
             const kidsTotal = perKid * kids;
             
-            document.getElementById('calcAccommodation').textContent = accommodationCost.toFixed(0);
             document.getElementById('calcPrimaryAdult').textContent = primaryAdultTotal.toFixed(0);
             document.getElementById('calcExtraAdults').textContent = extraAdultsTotal.toFixed(0);
             document.getElementById('calcKids').textContent = kidsTotal.toFixed(0);
             
             // Calculate subtotal
-            const subtotal = accommodationCost + primaryAdultTotal + extraAdultsTotal + kidsTotal;
+            const subtotal = primaryAdultTotal + extraAdultsTotal + kidsTotal;
             document.getElementById('calcSubtotal').textContent = subtotal.toFixed(0);
             
             // Calculate discount
@@ -1739,7 +1699,7 @@ class App {
         };
         
         // Add event listeners for auto-calculation and change detection
-        ['editCustomerName', 'editCustomerPhone', 'editCustomerEmail', 'editCheckIn', 'editCheckOut', 'editAdults', 'editKids', 'editPerNight', 'editPrimaryAdult', 'editExtraAdult', 'editPerKid', 'editDiscount', 'editGst', 'editTaxWithhold', 'editAmountPaid'].forEach(id => {
+        ['editCustomerName', 'editCustomerPhone', 'editCustomerEmail', 'editCheckIn', 'editCheckOut', 'editAdults', 'editKids', 'editPrimaryAdult', 'editExtraAdult', 'editPerKid', 'editDiscount', 'editGst', 'editTaxWithhold', 'editAmountPaid'].forEach(id => {
             document.getElementById(id)?.addEventListener('input', () => {
                 calculateTotal();
                 detectChanges();
@@ -1818,7 +1778,6 @@ class App {
         };
         
         if (booking.status === 'Inquiry' || booking.status === 'Enquiry' || booking.status === 'Confirmed') {
-            updatedData.per_night_cost = document.getElementById('editPerNight').value;
             updatedData.per_adult_cost = document.getElementById('editPrimaryAdult').value;
             updatedData.extra_adult_cost = document.getElementById('editExtraAdult').value;
             updatedData.per_kid_cost = document.getElementById('editPerKid').value;
@@ -1986,7 +1945,6 @@ class App {
         const formattedAddress = propertyAddress.replace(/\n/g, '<br>');
         
         // Calculate pricing - prefer property rates from DB
-        const perNight = parseFloat(booking.per_night_cost || booking.property_per_night_cost) || 0;
         const primaryAdultCost = parseFloat(booking.per_adult_cost || booking.property_per_adult_cost) || 0;
         const extraAdultCost = parseFloat(booking.extra_adult_cost || booking.property_extra_adult_cost || booking.per_adult_cost) || 0;
         const perKid = parseFloat(booking.per_kid_cost || booking.property_per_kid_cost) || 0;
@@ -1995,11 +1953,10 @@ class App {
         const taxWithhold = parseFloat(booking.tax_withhold) || 0;
         const taxWithholdType = booking.tax_withhold_type || 'percentage';
 
-        const accommodationCost = perNight * nights;
         const primaryAdultTotal = primaryAdultCost * primaryAdults;
         const extraAdultsTotal = extraAdultCost * extraAdults;
         const kidsTotal = perKid * booking.num_kids;
-        const subtotal = accommodationCost + primaryAdultTotal + extraAdultsTotal + kidsTotal;
+        const subtotal = primaryAdultTotal + extraAdultsTotal + kidsTotal;
         const discountAmount = subtotal * discount / 100;
         const afterDiscount = subtotal - discountAmount;
         const gstAmount = afterDiscount * gst / 100;
@@ -2097,12 +2054,6 @@ class App {
                             </tr>
                         </thead>
                         <tbody>
-                            <tr>
-                                <td style="padding: 12px; border: 1px solid #dee2e6;">Accommodation (Per Night)</td>
-                                <td style="padding: 12px; text-align: center; border: 1px solid #dee2e6;">${nights}</td>
-                                <td style="padding: 12px; text-align: right; border: 1px solid #dee2e6;">₹${perNight.toFixed(0)}</td>
-                                <td style="padding: 12px; text-align: right; border: 1px solid #dee2e6;">₹${accommodationCost.toFixed(0)}</td>
-                            </tr>
                             <tr>
                                 <td style="padding: 12px; border: 1px solid #dee2e6;">Primary Adult</td>
                                 <td style="padding: 12px; text-align: center; border: 1px solid #dee2e6;">${primaryAdults}</td>
@@ -3253,7 +3204,6 @@ class App {
                                 <tr>
                                     <th>Name</th>
                                     <th>Address</th>
-                                    <th>Per Night Cost</th>
                                     <th>Primary Adult Cost</th>
                                     <th>Extra Adult Cost</th>
                                     <th>Per Kid Cost</th>
@@ -3265,7 +3215,6 @@ class App {
                                     <tr>
                                         <td>${p.name}</td>
                                         <td>${p.address || 'N/A'}</td>
-                                        <td>₹${p.per_day_cost || 0}</td>
                                         <td>₹${p.per_adult_cost || 0}</td>
                                         <td>₹${p.extra_adult_cost || p.per_adult_cost || 0}</td>
                                         <td>₹${p.per_kid_cost || 0}</td>
@@ -3288,10 +3237,6 @@ class App {
                                     <div class="list-card-row">
                                         <span class="list-card-label">📍 Address:</span>
                                         <span class="list-card-value">${p.address || 'N/A'}</span>
-                                    </div>
-                                    <div class="list-card-row">
-                                        <span class="list-card-label">🏠 Per Night:</span>
-                                        <span class="list-card-value">₹${p.per_day_cost || 0}</span>
                                     </div>
                                     <div class="list-card-row">
                                         <span class="list-card-label">👤 Primary Adult:</span>
@@ -3625,10 +3570,6 @@ class App {
                         </div>
                         
                         <h3 style="color: var(--primary); margin: 1.5rem 0 1rem; font-size: 1.1rem;">Pricing</h3>
-                        <div class="form-group">
-                            <label>Per Night Cost (₹)</label>
-                            <input type="number" id="propPerDay" value="${property?.per_day_cost || 0}" min="0">
-                        </div>
                         <div class="form-row">
                             <div class="form-group">
                                 <label>Primary Adult Cost (₹)</label>
@@ -3664,7 +3605,6 @@ class App {
                 owner_name: document.getElementById('propOwnerName').value,
                 owner_mobile: document.getElementById('propOwnerMobile').value,
                 owner_email: document.getElementById('propOwnerEmail').value,
-                per_day_cost: parseFloat(document.getElementById('propPerDay').value) || 0,
                 per_adult_cost: parseFloat(document.getElementById('propPerAdult').value) || 0,
                 extra_adult_cost: parseFloat(document.getElementById('propExtraAdult').value) || 0,
                 per_kid_cost: parseFloat(document.getElementById('propPerKid').value) || 0,
