@@ -2004,19 +2004,33 @@ class App {
         const extraAdultCost = parseFloat(booking.extra_adult_cost || booking.property_extra_adult_cost || booking.per_adult_cost) || 0;
         const perKid = parseFloat(booking.per_kid_cost || booking.property_per_kid_cost) || 0;
         const discount = parseFloat(booking.discount) || 0;
+        const discountType = booking.discount_type || 'fixed';
         const gst = parseFloat(booking.gst) || 0;
+        const gstType = booking.gst_type || 'fixed';
+        const gstOperation = booking.gst_operation || 'add';
         const taxWithhold = parseFloat(booking.tax_withhold) || 0;
-        const taxWithholdType = booking.tax_withhold_type || 'percentage';
+        const taxWithholdType = booking.tax_withhold_type || 'fixed';
 
-        const primaryAdultTotal = primaryAdultCost * primaryAdults;
-        const extraAdultsTotal = extraAdultCost * extraAdults;
-        const kidsTotal = perKid * booking.num_kids;
+        // Calculate line items (multiply by nights)
+        const primaryAdultTotal = primaryAdultCost * primaryAdults * nights;
+        const extraAdultsTotal = extraAdultCost * extraAdults * nights;
+        const kidsTotal = perKid * booking.num_kids * nights;
         const subtotal = primaryAdultTotal + extraAdultsTotal + kidsTotal;
-        const discountAmount = subtotal * discount / 100;
+        
+        // Calculate discount (respect type)
+        const discountAmount = discountType === 'percentage' ? subtotal * discount / 100 : discount;
         const afterDiscount = subtotal - discountAmount;
-        const gstAmount = afterDiscount * gst / 100;
+        
+        // Calculate GST (respect type)
+        const gstAmount = gstType === 'percentage' ? afterDiscount * gst / 100 : gst;
+        
+        // Calculate tax withhold (respect type)
         const taxWithholdAmount = taxWithholdType === 'percentage' ? (afterDiscount + gstAmount) * taxWithhold / 100 : taxWithhold;
-        const total = afterDiscount + gstAmount - taxWithholdAmount;
+        
+        // Calculate total (respect GST operation)
+        const total = gstOperation === 'add' 
+            ? afterDiscount + gstAmount - taxWithholdAmount
+            : afterDiscount - gstAmount - taxWithholdAmount;
 
         const checkInDate = new Date(booking.check_in_date);
         const checkOutDate = new Date(booking.check_out_date);
@@ -2137,7 +2151,7 @@ class App {
                             </tr>
                             ${discount > 0 ? `
                             <tr style="color: #27ae60;">
-                                <td colspan="3" style="padding: 12px; text-align: right; border: 1px solid #dee2e6;">Discount (${discount}%):</td>
+                                <td colspan="3" style="padding: 12px; text-align: right; border: 1px solid #dee2e6;">Discount ${discountType === 'percentage' ? '(' + discount + '%)' : '(Fixed)'}:</td>
                                 <td style="padding: 12px; text-align: right; border: 1px solid #dee2e6;">- ₹${discountAmount.toFixed(0)}</td>
                             </tr>
                             <tr style="background: #f8f9fa;">
@@ -2145,10 +2159,12 @@ class App {
                                 <td style="padding: 12px; text-align: right; border: 1px solid #dee2e6; font-weight: bold;">₹${afterDiscount.toFixed(0)}</td>
                             </tr>
                             ` : ''}
+                            ${gst > 0 || gstAmount > 0 ? `
                             <tr>
-                                <td colspan="3" style="padding: 12px; text-align: right; border: 1px solid #dee2e6;">GST (${gst}%):</td>
-                                <td style="padding: 12px; text-align: right; border: 1px solid #dee2e6;">₹${gstAmount.toFixed(0)}</td>
+                                <td colspan="3" style="padding: 12px; text-align: right; border: 1px solid #dee2e6;">GST ${gstType === 'percentage' ? '(' + gst + '%)' : '(Fixed)'}:</td>
+                                <td style="padding: 12px; text-align: right; border: 1px solid #dee2e6;">${gstOperation === 'add' ? '+' : '-'} ₹${gstAmount.toFixed(0)}</td>
                             </tr>
+                            ` : ''}
                             ${taxWithhold > 0 ? `
                             <tr style="color: #e74c3c;">
                                 <td colspan="3" style="padding: 12px; text-align: right; border: 1px solid #dee2e6;">Tax Withhold ${taxWithholdType === 'percentage' ? '(' + taxWithhold + '%)' : '(Fixed)'}:</td>
@@ -3922,7 +3938,7 @@ class App {
             
             // Setup download handler
             document.getElementById('downloadInvoiceBtn').addEventListener('click', async () => {
-                await this.downloadInvoice(booking);
+                await this.generateAndDownloadInvoice(booking);
             });
             
         } catch (error) {
