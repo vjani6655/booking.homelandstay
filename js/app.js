@@ -1445,7 +1445,7 @@ class App {
                                 <strong>₹<span id="calcSubtotal">0</span></strong>
                             </div>
                             <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem; color: var(--success);">
-                                <span>Partner fee (<span id="discountPercent">0</span>%):</span>
+                                <span>Partner fee:</span>
                                 <strong>- ₹<span id="calcDiscountAmount">0</span></strong>
                             </div>
                             <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
@@ -1457,7 +1457,7 @@ class App {
                                 <strong><span id="gstSign">+</span> ₹<span id="calcGstAmount">0</span></strong>
                             </div>
                             <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem; color: var(--error);">
-                                <span>Tax Withhold <span id="taxWithholdDisplay">0%</span>:</span>
+                                <span>Tax Withhold:</span>
                                 <strong>- ₹<span id="calcTaxWithholdAmount">0</span></strong>
                             </div>
                             <hr style="margin: 0.5rem 0;">
@@ -1649,10 +1649,8 @@ class App {
             let discountAmount = 0;
             if (discountType === 'percentage') {
                 discountAmount = subtotal * discount / 100;
-                document.getElementById('discountPercent').textContent = discount + '%';
             } else {
                 discountAmount = discount;
-                document.getElementById('discountPercent').textContent = '(Fixed)';
             }
             document.getElementById('calcDiscountAmount').textContent = discountAmount.toFixed(0);
             
@@ -1674,10 +1672,8 @@ class App {
             let taxWithholdAmount = 0;
             if (taxWithholdType === 'percentage') {
                 taxWithholdAmount = (afterDiscount + gstAmount) * taxWithhold / 100;
-                document.getElementById('taxWithholdDisplay').textContent = taxWithhold + '%';
             } else {
                 taxWithholdAmount = taxWithhold;
-                document.getElementById('taxWithholdDisplay').textContent = '(Fixed)';
             }
             document.getElementById('calcTaxWithholdAmount').textContent = taxWithholdAmount.toFixed(0);
             
