@@ -409,10 +409,14 @@ class App {
                 </div>
 
                 <div class="card">
-                    <div class="card-header" style="flex-wrap: wrap;">
-                        <h2 class="card-title" style="width: 100%;">Pending Requests</h2>
-                        <p class="text-secondary" style="width: 100%; margin: 0.25rem 0 0 0; font-size: 0.85rem; font-weight: 400;">New inquiries and draft bookings awaiting confirmation or quotes</p>
-                        <button class="btn btn-primary" id="addBookingBtn" style="position: absolute; right: 1rem; top: 1rem;">+ Add Booking</button>
+                    <div class="card-header" style="flex-wrap: wrap; position: relative;">
+                        <div style="width: 100%; display: flex; justify-content: space-between; align-items: flex-start;">
+                            <div>
+                                <h2 class="card-title">Pending Requests</h2>
+                                <p class="text-secondary" style="margin: 0.25rem 0 0 0; font-size: 0.85rem; font-weight: 400;">New inquiries and draft bookings awaiting confirmation or quotes</p>
+                            </div>
+                            <button class="btn btn-primary" id="addBookingBtn" style="white-space: nowrap;">+ Add Booking</button>
+                        </div>
                     </div>
                     ${pendingRequests.length === 0 ? 
                         '<p class="text-secondary">No pending requests</p>' : 
@@ -466,7 +470,7 @@ class App {
                                 <td>${r.customer_name}</td>
                                 <td>${new Date(r.check_in_date).toLocaleDateString()}</td>
                                 <td>${new Date(r.check_out_date).toLocaleDateString()}</td>
-                                <td>${r.num_adults + r.num_kids} (${r.num_adults}A, ${r.num_kids}K)</td>
+                                <td>${parseInt(r.num_adults) + parseInt(r.num_kids)} (${r.num_adults}A, ${r.num_kids}K)</td>
                                 <td><button class="btn btn-sm btn-primary view-request" data-id="${r.id}">View</button></td>
                             </tr>
                         `).join('')}
@@ -491,7 +495,7 @@ class App {
                             </div>
                             <div class="list-card-row">
                                 <span class="list-card-label">Guests:</span>
-                                <span class="list-card-value">${r.num_adults + r.num_kids} (${r.num_adults}A, ${r.num_kids}K)</span>
+                                <span class="list-card-value">${parseInt(r.num_adults) + parseInt(r.num_kids)} (${r.num_adults}A, ${r.num_kids}K)</span>
                             </div>
                         </div>
                         <div class="list-card-footer">
@@ -526,7 +530,7 @@ class App {
                                 <td>${b.customer_name}</td>
                                 <td>${new Date(b.check_in_date).toLocaleDateString()}</td>
                                 <td>${new Date(b.check_out_date).toLocaleDateString()}</td>
-                                <td>${b.num_adults + b.num_kids} (${b.num_adults}A, ${b.num_kids}K)</td>
+                                <td>${parseInt(b.num_adults) + parseInt(b.num_kids)} (${b.num_adults}A, ${b.num_kids}K)</td>
                                 <td><span class="badge" style="background: ${paymentColor};">${b.payment_status || 'Pending'}</span></td>
                                 <td>
                                     <button class="btn btn-sm btn-primary view-upcoming-booking" data-id="${b.id}">View</button>
@@ -559,7 +563,7 @@ class App {
                             </div>
                             <div class="list-card-row">
                                 <span class="list-card-label">Guests:</span>
-                                <span class="list-card-value">${b.num_adults + b.num_kids} (${b.num_adults}A, ${b.num_kids}K)</span>
+                                <span class="list-card-value">${parseInt(b.num_adults) + parseInt(b.num_kids)} (${b.num_adults}A, ${b.num_kids}K)</span>
                             </div>
                         </div>
                         <div class="list-card-footer">
@@ -1380,15 +1384,19 @@ class App {
                                 <small class="text-secondary" id="discountHint">Fixed amount deduction</small>
                             </div>
                             <div class="form-group">
-                                <label style="display: flex; align-items: center; gap: 0.5rem;">
-                                    GST
-                                    <select id="editGstType" style="width: auto; padding: 0.25rem 0.5rem; font-size: 0.9rem;">
-                                        <option value="fixed" ${(booking.gst_type || 'fixed') === 'fixed' ? 'selected' : ''}>₹</option>
-                                        <option value="percentage" ${booking.gst_type === 'percentage' ? 'selected' : ''}>%</option>
+                                <label>GST</label>
+                                <div style="display: flex; gap: 0.5rem;">
+                                    <select id="editGSTOperation" style="width: 60px;">
+                                        <option value="add" ${(booking.gst_operation || 'add') === 'add' ? 'selected' : ''}>+</option>
+                                        <option value="subtract" ${booking.gst_operation === 'subtract' ? 'selected' : ''}>-</option>
                                     </select>
-                                </label>
-                                <input type="number" id="editGst" value="${booking.gst || 0}">
-                                <small class="text-secondary" id="gstHint">Fixed amount</small>
+                                    <input type="number" id="editGst" value="${booking.gst || 0}" step="0.01" min="0" style="flex: 1;">
+                                    <select id="editGstType" style="width: 80px;">
+                                        <option value="percentage" ${booking.gst_type === 'percentage' ? 'selected' : ''}>%</option>
+                                        <option value="fixed" ${(booking.gst_type || 'fixed') === 'fixed' ? 'selected' : ''}>₹</option>
+                                    </select>
+                                </div>
+                                <small class="text-secondary" id="gstHint">Add or subtract GST</small>
                             </div>
                         </div>
                         <div class="form-row">
@@ -1515,6 +1523,7 @@ class App {
             per_kid_cost: booking.per_kid_cost,
             discount: booking.discount,
             gst: booking.gst,
+            gst_operation: booking.gst_operation,
             tax_withhold: booking.tax_withhold,
             tax_withhold_type: booking.tax_withhold_type,
             payment_status: booking.payment_status,
@@ -1542,6 +1551,7 @@ class App {
                 document.getElementById('editDiscountType')?.value !== (originalData.discount_type || 'fixed') ||
                 parseFloat(document.getElementById('editGst')?.value || 0) !== parseFloat(originalData.gst || 0) ||
                 document.getElementById('editGstType')?.value !== (originalData.gst_type || 'fixed') ||
+                document.getElementById('editGSTOperation')?.value !== (originalData.gst_operation || 'add') ||
                 parseFloat(document.getElementById('editTaxWithhold')?.value || 0) !== parseFloat(originalData.tax_withhold || 0) ||
                 document.getElementById('editTaxWithholdType')?.value !== (originalData.tax_withhold_type || 'fixed') ||
                 document.getElementById('editPaymentStatus')?.value !== originalData.payment_status ||
@@ -1593,6 +1603,7 @@ class App {
             const discountType = document.getElementById('editDiscountType')?.value || 'fixed';
             const gst = parseFloat(document.getElementById('editGst')?.value) || 0;
             const gstType = document.getElementById('editGstType')?.value || 'fixed';
+            const gstOperation = document.getElementById('editGSTOperation')?.value || 'add';
             const taxWithhold = parseFloat(document.getElementById('editTaxWithhold')?.value) || 0;
             const taxWithholdType = document.getElementById('editTaxWithholdType')?.value || 'fixed';
             
@@ -1663,7 +1674,9 @@ class App {
             document.getElementById('calcTaxWithholdAmount').textContent = taxWithholdAmount.toFixed(0);
             
             // Calculate total
-            const total = afterDiscount + gstAmount - taxWithholdAmount;
+            const total = gstOperation === 'add' 
+                ? afterDiscount + gstAmount - taxWithholdAmount
+                : afterDiscount - gstAmount - taxWithholdAmount;
             document.getElementById('calcTotal').textContent = total.toFixed(0);
             document.getElementById('totalDisplay').innerHTML = `<div>Total: ₹${total.toFixed(0)}</div><div style="font-size: 0.9rem; font-weight: 400; color: var(--text-secondary);">${nights} night${nights !== 1 ? 's' : ''}</div>`;
             
@@ -1695,7 +1708,7 @@ class App {
             const type = document.getElementById('editGstType')?.value;
             const hint = document.getElementById('gstHint');
             if (hint) {
-                hint.textContent = type === 'percentage' ? 'Percentage amount' : 'Fixed amount';
+                hint.textContent = 'Add or subtract GST';
             }
             calculateTotal();
         };
@@ -1754,6 +1767,10 @@ class App {
         });
         document.getElementById('editGstType')?.addEventListener('change', () => {
             updateGstHint();
+            detectChanges();
+        });
+        document.getElementById('editGSTOperation')?.addEventListener('change', () => {
+            calculateTotal();
             detectChanges();
         });
         document.getElementById('editTaxWithholdType')?.addEventListener('change', () => {
@@ -1822,6 +1839,7 @@ class App {
             updatedData.discount_type = document.getElementById('editDiscountType').value;
             updatedData.gst = document.getElementById('editGst').value;
             updatedData.gst_type = document.getElementById('editGstType').value;
+            updatedData.gst_operation = document.getElementById('editGSTOperation')?.value || 'add';
             updatedData.tax_withhold = document.getElementById('editTaxWithhold').value;
             updatedData.tax_withhold_type = document.getElementById('editTaxWithholdType').value;
             updatedData.total_amount = total;
@@ -2454,7 +2472,7 @@ class App {
                                 ${dayLabel}
                             </div>
                             <div class="calendar-booking-info">
-                                ${b.num_adults + b.num_kids} guests
+                                ${parseInt(b.num_adults) + parseInt(b.num_kids)} guests
                             </div>
                         </div>
                     `;}).join('')}
@@ -2479,7 +2497,7 @@ class App {
                                 ${dayLabel}
                             </div>
                             <div class="calendar-booking-info">
-                                ${b.num_adults + b.num_kids} guests
+                                ${parseInt(b.num_adults) + parseInt(b.num_kids)} guests
                             </div>
                         </div>
                     `;}).join('')}
@@ -2504,7 +2522,7 @@ class App {
                                 ${dayLabel}
                             </div>
                             <div class="calendar-booking-info">
-                                ${b.num_adults + b.num_kids} guests
+                                ${parseInt(b.num_adults) + parseInt(b.num_kids)} guests
                             </div>
                         </div>
                     `;}).join('')}
@@ -2619,7 +2637,7 @@ class App {
                                     <td>${b.customer_phone}</td>
                                     <td>${new Date(b.check_in_date).toLocaleDateString()}</td>
                                     <td>${new Date(b.check_out_date).toLocaleDateString()}</td>
-                                    <td>${b.num_adults + b.num_kids}</td>
+                                    <td>${parseInt(b.num_adults) + parseInt(b.num_kids)}</td>
                                     <td>₹${b.total_amount || 0}</td>
                                     <td><span class="badge" style="background: ${this.getPaymentColor(b.payment_status)};">${b.payment_status || 'N/A'}</span></td>
                                     <td>
@@ -2656,7 +2674,7 @@ class App {
                                 </div>
                                 <div class="list-card-row">
                                     <span class="list-card-label">👥 Guests:</span>
-                                    <span class="list-card-value">${b.num_adults + b.num_kids}</span>
+                                    <span class="list-card-value">${parseInt(b.num_adults) + parseInt(b.num_kids)}</span>
                                 </div>
                                 <div class="list-card-row">
                                     <span class="list-card-label">💰 Total:</span>
