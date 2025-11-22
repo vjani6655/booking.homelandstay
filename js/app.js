@@ -767,12 +767,15 @@ class App {
                             <div class="form-group">
                                 <label>Check-in Date *</label>
                                 <input type="date" id="checkIn" required>
+                                <small class="text-secondary" id="checkInDay" style="display: block; margin-top: 0.25rem;"></small>
                             </div>
                             <div class="form-group">
                                 <label>Check-out Date *</label>
                                 <input type="date" id="checkOut" required>
+                                <small class="text-secondary" id="checkOutDay" style="display: block; margin-top: 0.25rem;"></small>
                             </div>
                         </div>
+                        <div id="durationDisplay" style="text-align: center; color: var(--success); font-weight: 600; margin-top: 0.5rem;"></div>
 
                         <div class="form-row">
                             <div class="form-group">
@@ -940,12 +943,21 @@ class App {
                 document.getElementById('addPricingBreakdown').style.display = 'none';
                 document.getElementById('addTotalDisplay').textContent = '';
                 document.getElementById('sendQuoteBtn').style.display = 'none';
+                document.getElementById('checkInDay').textContent = '';
+                document.getElementById('checkOutDay').textContent = '';
+                document.getElementById('durationDisplay').textContent = '';
                 return null;
             }
 
             const checkInDate = new Date(checkIn);
             const checkOutDate = new Date(checkOut);
             const nights = Math.max(0, Math.ceil((checkOutDate - checkInDate) / (1000 * 60 * 60 * 24)));
+
+            // Show day names
+            const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+            document.getElementById('checkInDay').textContent = `📅 Day: ${days[checkInDate.getDay()]}`;
+            document.getElementById('checkOutDay').textContent = `📅 Day: ${days[checkOutDate.getDay()]}`;
+            document.getElementById('durationDisplay').textContent = nights > 0 ? `🏨 Duration: ${nights} night${nights !== 1 ? 's' : ''}` : '';
 
             if (nights <= 0) {
                 document.getElementById('addPricingBreakdown').style.display = 'none';
@@ -1030,7 +1042,7 @@ class App {
 
             document.getElementById('addBreakdownContent').innerHTML = breakdownHTML;
             document.getElementById('addPricingBreakdown').style.display = 'block';
-            document.getElementById('addTotalDisplay').textContent = `Total: ₹${total.toFixed(2)}`;
+            document.getElementById('addTotalDisplay').innerHTML = `<div>Total: ₹${total.toFixed(2)}</div><div style="font-size: 0.9rem; font-weight: 400; color: var(--text-secondary);">${nights} night${nights !== 1 ? 's' : ''}</div>`;
             document.getElementById('sendQuoteBtn').style.display = 'inline-block';
 
             return {

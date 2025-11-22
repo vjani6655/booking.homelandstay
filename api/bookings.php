@@ -33,7 +33,7 @@ if ($action === 'dashboard') {
     $today = date('Y-m-d');
     
     // Get pending requests
-    $stmt = $db->prepare("SELECT * FROM bookings WHERE status = 'Enquiry' ORDER BY created_at DESC");
+    $stmt = $db->prepare("SELECT * FROM bookings WHERE status IN ('Enquiry', 'Inquiry') ORDER BY created_at DESC");
     $stmt->execute();
     $pendingRequests = $stmt->fetchAll();
     
