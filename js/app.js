@@ -607,7 +607,8 @@ class App {
                                     <td>₹${paid.toLocaleString()}</td>
                                     <td><strong style="color: #ef4444;">₹${pending.toLocaleString()}</strong></td>
                                     <td>
-                                        <button class="btn btn-sm btn-primary view-payment" data-id="${b.id}">Take Payment</button>
+                                        <button class="btn btn-sm btn-primary view-pending-payment" data-id="${b.id}">View</button>
+                                        <button class="btn btn-sm btn-success view-payment" data-id="${b.id}">💳 Payment</button>
                                         ${showInvoice ? `<button class="btn btn-sm btn-secondary show-invoice-btn" data-id="${b.id}">📄 Invoice</button>` : ''}
                                     </td>
                                 </tr>
@@ -649,7 +650,8 @@ class App {
                                 </div>
                             </div>
                             <div class="list-card-footer">
-                                <button class="btn btn-primary btn-block view-payment" data-id="${b.id}">View & Take Payment</button>
+                                <button class="btn btn-primary btn-block view-pending-payment" data-id="${b.id}">View Details</button>
+                                <button class="btn btn-success btn-block view-payment" data-id="${b.id}" style="margin-top: 0.5rem;">💳 Take Payment</button>
                                 ${showInvoice ? `<button class="btn btn-secondary btn-block show-invoice-btn" data-id="${b.id}" style="margin-top: 0.5rem;">📄 View Invoice</button>` : ''}
                             </div>
                         </div>
@@ -672,6 +674,13 @@ class App {
         });
 
         document.querySelectorAll('.view-upcoming-booking').forEach(btn => {
+            btn.addEventListener('click', async (e) => {
+                const id = e.target.dataset.id;
+                await this.showViewRequestModal(id);
+            });
+        });
+
+        document.querySelectorAll('.view-pending-payment').forEach(btn => {
             btn.addEventListener('click', async (e) => {
                 const id = e.target.dataset.id;
                 await this.showViewRequestModal(id);
