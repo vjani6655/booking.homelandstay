@@ -1,4 +1,24 @@
 <?php
+// Enable error reporting and output buffering
+ini_set('display_errors', 0);
+error_reporting(E_ALL);
+
+// Start output buffering to catch any errors
+ob_start();
+
+// Set error handler to catch fatal errors
+register_shutdown_function(function() {
+    $error = error_get_last();
+    if ($error !== null && in_array($error['type'], [E_ERROR, E_PARSE, E_CORE_ERROR, E_COMPILE_ERROR])) {
+        ob_clean();
+        header('Content-Type: application/json');
+        echo json_encode([
+            'success' => false,
+            'message' => 'Server error: ' . $error['message'] . ' in ' . $error['file'] . ' on line ' . $error['line']
+        ]);
+    }
+});
+
 require_once 'config.php';
 header('Content-Type: application/json');
 
@@ -216,19 +236,20 @@ if ($method === 'POST' && $action === 'create') {
 }
 
 if ($method === 'POST' && $action === 'update') {
-    requireAuth();
-    validateContentType();
-    checkRateLimit('booking_update', 30, 60);
-    
-    $data = getJsonInput();
-    
-    // CSRF validation
-    $csrfToken = $data['csrf_token'] ?? '';
-    if (!verifyCSRFToken($csrfToken)) {
-        http_response_code(403);
-        echo json_encode(['success' => false, 'message' => 'Invalid CSRF token']);
-        exit;
-    }
+    try {
+        requireAuth();
+        validateContentType();
+        checkRateLimit('booking_update', 30, 60);
+        
+        $data = getJsonInput();
+        
+        // CSRF validation
+        $csrfToken = $data['csrf_token'] ?? '';
+        if (!verifyCSRFToken($csrfToken)) {
+            http_response_code(403);
+            echo json_encode(['success' => false, 'message' => 'Invalid CSRF token']);
+            exit;
+        }
     
     $id = (int)($data['id'] ?? 0);
     if ($id <= 0) {
@@ -346,16 +367,21 @@ if ($method === 'POST' && $action === 'update') {
         $pendingAmount = $totalAmount - $amountPaid;
         
         if ($pendingAmount > 0) {
+            // Get booking details for notification
+            $bookingStmt = $db->prepare("SELECT customer_name, check_in_date FROM bookings WHERE id = ?");
+            $bookingStmt->execute([$id]);
+            $bookingInfo = $bookingStmt->fetch(PDO::FETCH_ASSOC);
+            
             // Check if notification already exists
             $notifCheck = $db->prepare("SELECT id FROM notifications WHERE booking_id = ? AND type = 'pending_payment' AND is_read = 0");
             $notifCheck->execute([$id]);
             
-            if (!$notifCheck->fetch()) {
+            if (!$notifCheck->fetch() && $bookingInfo) {
                 $notifStmt = $db->prepare("INSERT INTO notifications (type, title, message, booking_id) VALUES (?, ?, ?, ?)");
                 $notifStmt->execute([
                     'pending_payment',
                     'Pending Payment Alert',
-                    "₹{$pendingAmount} pending for {$customerName}'s booking (Check-in: {$checkInDate})",
+                    "₹{$pendingAmount} pending for {$bookingInfo['customer_name']}'s booking (Check-in: {$bookingInfo['check_in_date']})",
                     $id
                 ]);
             }
@@ -367,6 +393,15 @@ if ($method === 'POST' && $action === 'update') {
         'message' => 'Booking updated successfully'
     ]);
     exit;
+    
+    } catch (Exception $e) {
+        http_response_code(500);
+        echo json_encode([
+            'success' => false,
+            'message' => 'Database error: ' . $e->getMessage()
+        ]);
+        exit;
+    }
 }
 
 echo json_encode(['success' => false, 'message' => 'Invalid request']);
