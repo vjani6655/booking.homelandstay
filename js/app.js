@@ -144,6 +144,10 @@ class App {
 
             <main class="main-content" id="mainContent"></main>
             
+            <div id="pageLoader" class="page-loader" style="display: none;">
+                <div class="spinner"></div>
+            </div>
+            
             <div id="toastContainer" class="toast-container"></div>
         `;
     }
@@ -226,6 +230,46 @@ class App {
         }, duration);
     }
 
+    showLoading() {
+        const loader = document.getElementById('pageLoader');
+        if (loader) {
+            loader.style.display = 'flex';
+        }
+    }
+
+    hideLoading() {
+        const loader = document.getElementById('pageLoader');
+        if (loader) {
+            loader.style.display = 'none';
+        }
+    }
+
+    toggleSidebar() {
+        document.getElementById('sidebar').classList.toggle('active');
+        document.getElementById('overlay').classList.toggle('active');
+    }
+
+    closeSidebar() {
+        document.getElementById('sidebar').classList.remove('active');
+        document.getElementById('overlay').classList.remove('active');
+    }
+
+    toggleNotifications() {
+        document.getElementById('notificationsPanel').classList.toggle('active');
+        document.getElementById('overlay').classList.toggle('active');
+    }
+
+    closeNotifications() {
+        document.getElementById('notificationsPanel').classList.remove('active');
+        document.getElementById('overlay').classList.remove('active');
+        
+        // Auto remove
+        setTimeout(() => {
+            toast.classList.remove('show');
+            setTimeout(() => toast.remove(), 300);
+        }, duration);
+    }
+
     showConfirm(message, onConfirm, onCancel = null) {
         const modal = document.createElement('div');
         modal.className = 'modal active';
@@ -289,6 +333,9 @@ class App {
         this.currentPage = page;
         sessionStorage.setItem('currentPage', page);
         
+        // Show loading indicator
+        this.showLoading();
+        
         // Update active nav - both desktop and mobile
         document.querySelectorAll('.sidebar-nav a, .desktop-nav .nav-link').forEach(link => {
             link.classList.remove('active');
@@ -321,6 +368,9 @@ class App {
                 this.setupSettingsEvents();
                 break;
         }
+        
+        // Hide loading indicator
+        this.hideLoading();
     }
 
     async renderHomePage() {
