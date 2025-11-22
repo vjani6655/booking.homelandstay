@@ -1,4 +1,11 @@
 <?php
+// Start output buffering to catch any errors
+ob_start();
+
+// Disable error display (log them instead)
+ini_set('display_errors', 0);
+error_reporting(E_ALL);
+
 header('Content-Type: application/json');
 header('Access-Control-Allow-Origin: *');
 header('Access-Control-Allow-Methods: POST, OPTIONS');
@@ -92,9 +99,13 @@ try {
         $result->free();
     }
     
+    // Clean any output buffer and send JSON
+    ob_clean();
     echo json_encode($response);
     
 } catch (Exception $e) {
+    // Clean any output buffer and send error JSON
+    ob_clean();
     echo json_encode([
         'success' => false,
         'message' => $e->getMessage()
@@ -102,4 +113,5 @@ try {
 }
 
 $conn->close();
+ob_end_flush();
 ?>
