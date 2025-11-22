@@ -65,7 +65,7 @@
                 const data = await response.json();
                 
                 if (data.success) {
-                    window.location.href = 'index.html';
+                    window.location.href = 'admin.html';
                 } else {
                     errorDiv.textContent = data.message;
                     errorDiv.classList.remove('hidden');

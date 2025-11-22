@@ -39,7 +39,7 @@ class App {
         // Check authentication
         const auth = await this.checkAuth();
         if (!auth) {
-            window.location.href = 'login.html';
+            window.location.href = 'admin-login.html';
             return;
         }
 
@@ -186,14 +186,14 @@ class App {
         document.getElementById('logoutBtn').addEventListener('click', async (e) => {
             e.preventDefault();
             await fetch('api/auth.php?action=logout', { method: 'POST' });
-            window.location.href = 'login.html';
+            window.location.href = 'admin-login.html';
         });
 
         // Desktop Logout
         document.getElementById('desktopLogoutBtn').addEventListener('click', async (e) => {
             e.preventDefault();
             await fetch('api/auth.php?action=logout', { method: 'POST' });
-            window.location.href = 'login.html';
+            window.location.href = 'admin-login.html';
         });
     }
 
