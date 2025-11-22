@@ -816,10 +816,55 @@ class App {
                                 <small class="text-secondary">Per additional adult</small>
                             </div>
                         </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Discount</label>
+                                <div style="display: flex; gap: 0.5rem;">
+                                    <input type="number" id="addDiscount" step="0.01" min="0" value="0" style="flex: 1;">
+                                    <select id="addDiscountType" style="width: 80px;">
+                                        <option value="percentage">%</option>
+                                        <option value="fixed">₹</option>
+                                    </select>
+                                </div>
+                                <small class="text-secondary">Percentage deduction</small>
+                            </div>
+                            <div class="form-group">
+                                <label>GST</label>
+                                <div style="display: flex; gap: 0.5rem;">
+                                    <input type="number" id="addGST" step="0.01" min="0" value="0" style="flex: 1;">
+                                    <select id="addGSTType" style="width: 80px;">
+                                        <option value="percentage">%</option>
+                                        <option value="fixed">₹</option>
+                                    </select>
+                                </div>
+                                <small class="text-secondary">Percentage amount</small>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Tax Withhold</label>
+                            <div style="display: flex; gap: 0.5rem;">
+                                <input type="number" id="addTaxWithhold" step="0.01" min="0" value="0" style="flex: 1;">
+                                <select id="addTaxWithholdType" style="width: 80px;">
+                                    <option value="percentage">%</option>
+                                    <option value="fixed">₹</option>
+                                </select>
+                            </div>
+                            <small class="text-secondary">Percentage deduction</small>
+                        </div>
+
+                        <div id="addPricingBreakdown" style="background: var(--bg-secondary); padding: 1rem; border-radius: 8px; margin-top: 1rem; display: none;">
+                            <div id="addBreakdownContent"></div>
+                        </div>
                     </form>
                 </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-primary" id="saveBookingBtn">Save Booking</button>
+                <div class="modal-footer" style="display: flex; justify-content: space-between; align-items: center;">
+                    <div id="addTotalDisplay" style="font-size: 1.25rem; font-weight: 600; color: var(--primary);"></div>
+                    <div style="display: flex; gap: 0.5rem;">
+                        <button type="button" class="btn btn-secondary" id="saveAsDraftBtn">Save as Draft</button>
+                        <button type="button" class="btn btn-primary" id="sendQuoteBtn" style="display: none;">Send Quote</button>
+                    </div>
                 </div>
             </div>
         `;
@@ -878,8 +923,155 @@ class App {
             }
         });
 
-        document.getElementById('saveBookingBtn').addEventListener('click', async () => {
-            const saveBtn = document.getElementById('saveBookingBtn');
+        // Calculate total and update UI
+        const calculateAddBookingTotal = () => {
+            const checkIn = document.getElementById('checkIn').value;
+            const checkOut = document.getElementById('checkOut').value;
+            const numAdults = parseInt(document.getElementById('adults').value) || 1;
+            const numKids = parseInt(document.getElementById('kids').value) || 0;
+            const perNightCost = parseFloat(document.getElementById('perNightCost').value) || 0;
+            const primaryAdultCost = parseFloat(document.getElementById('primaryAdultCost').value) || 0;
+            const extraAdultCost = parseFloat(document.getElementById('extraAdultCost').value) || 0;
+            const perKidCost = parseFloat(document.getElementById('perKidCost').value) || 0;
+            const discount = parseFloat(document.getElementById('addDiscount').value) || 0;
+            const discountType = document.getElementById('addDiscountType').value;
+            const gst = parseFloat(document.getElementById('addGST').value) || 0;
+            const gstType = document.getElementById('addGSTType').value;
+            const taxWithhold = parseFloat(document.getElementById('addTaxWithhold').value) || 0;
+            const taxWithholdType = document.getElementById('addTaxWithholdType').value;
+
+            if (!checkIn || !checkOut) {
+                document.getElementById('addPricingBreakdown').style.display = 'none';
+                document.getElementById('addTotalDisplay').textContent = '';
+                document.getElementById('sendQuoteBtn').style.display = 'none';
+                return null;
+            }
+
+            const checkInDate = new Date(checkIn);
+            const checkOutDate = new Date(checkOut);
+            const nights = Math.max(0, Math.ceil((checkOutDate - checkInDate) / (1000 * 60 * 60 * 24)));
+
+            if (nights <= 0) {
+                document.getElementById('addPricingBreakdown').style.display = 'none';
+                document.getElementById('addTotalDisplay').textContent = '';
+                document.getElementById('sendQuoteBtn').style.display = 'none';
+                return null;
+            }
+
+            const extraAdults = Math.max(0, numAdults - 1);
+
+            const accommodationTotal = nights * perNightCost;
+            const primaryAdultTotal = primaryAdultCost;
+            const extraAdultsTotal = extraAdults * extraAdultCost;
+            const kidsTotal = numKids * perKidCost;
+
+            const subtotal = accommodationTotal + primaryAdultTotal + extraAdultsTotal + kidsTotal;
+
+            const discountAmount = discountType === 'percentage' 
+                ? (subtotal * discount / 100)
+                : discount;
+
+            const afterDiscount = subtotal - discountAmount;
+
+            const gstAmount = gstType === 'percentage'
+                ? (afterDiscount * gst / 100)
+                : gst;
+
+            const taxWithholdAmount = taxWithholdType === 'percentage'
+                ? (afterDiscount * taxWithhold / 100)
+                : taxWithhold;
+
+            const total = afterDiscount + gstAmount - taxWithholdAmount;
+
+            // Update breakdown display
+            const breakdownHTML = `
+                <div style="font-size: 0.9rem; line-height: 1.8;">
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                        <span style="font-weight: 600;">Nights:</span>
+                        <span>${nights}</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between;">
+                        <span>Accommodation (${nights} × ₹${perNightCost.toFixed(2)}):</span>
+                        <span>₹${accommodationTotal.toFixed(2)}</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between;">
+                        <span>Primary Adult (1 × ₹${primaryAdultCost.toFixed(2)}):</span>
+                        <span>₹${primaryAdultTotal.toFixed(2)}</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between;">
+                        <span>Extra Adults (${extraAdults} × ₹${extraAdultCost.toFixed(2)}):</span>
+                        <span>₹${extraAdultsTotal.toFixed(2)}</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between;">
+                        <span>Kids (${numKids} × ₹${perKidCost.toFixed(2)}):</span>
+                        <span>₹${kidsTotal.toFixed(2)}</span>
+                    </div>
+                    <div style="border-top: 1px solid var(--border); margin: 0.5rem 0; padding-top: 0.5rem;"></div>
+                    <div style="display: flex; justify-content: space-between; font-weight: 600;">
+                        <span>Subtotal:</span>
+                        <span>₹${subtotal.toFixed(2)}</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; color: var(--success);">
+                        <span>Discount (${discount}${discountType === 'percentage' ? '%' : '₹'}):</span>
+                        <span>- ₹${discountAmount.toFixed(2)}</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; font-weight: 600;">
+                        <span>After Discount:</span>
+                        <span>₹${afterDiscount.toFixed(2)}</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between;">
+                        <span>GST (${gst}${gstType === 'percentage' ? '%' : '₹'}):</span>
+                        <span>+ ₹${gstAmount.toFixed(2)}</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; color: var(--danger);">
+                        <span>Tax Withhold ${taxWithhold}${taxWithholdType === 'percentage' ? '%' : '₹'}:</span>
+                        <span>- ₹${taxWithholdAmount.toFixed(2)}</span>
+                    </div>
+                    <div style="border-top: 2px solid var(--primary); margin: 0.5rem 0; padding-top: 0.5rem;"></div>
+                    <div style="display: flex; justify-content: space-between; font-size: 1.1rem; font-weight: 700; color: var(--primary);">
+                        <span>Total Amount:</span>
+                        <span>₹${total.toFixed(2)}</span>
+                    </div>
+                </div>
+            `;
+
+            document.getElementById('addBreakdownContent').innerHTML = breakdownHTML;
+            document.getElementById('addPricingBreakdown').style.display = 'block';
+            document.getElementById('addTotalDisplay').textContent = `Total: ₹${total.toFixed(2)}`;
+            document.getElementById('sendQuoteBtn').style.display = 'inline-block';
+
+            return {
+                nights,
+                subtotal,
+                discount: discountAmount,
+                gst: gstAmount,
+                taxWithhold: taxWithholdAmount,
+                total
+            };
+        };
+
+        // Add change listeners to recalculate
+        ['checkIn', 'checkOut', 'adults', 'kids', 'perNightCost', 'primaryAdultCost', 'extraAdultCost', 'perKidCost', 'addDiscount', 'addDiscountType', 'addGST', 'addGSTType', 'addTaxWithhold', 'addTaxWithholdType'].forEach(id => {
+            const element = document.getElementById(id);
+            if (element) {
+                element.addEventListener('change', calculateAddBookingTotal);
+                element.addEventListener('input', calculateAddBookingTotal);
+            }
+        });
+
+        // Save as Draft button
+        document.getElementById('saveAsDraftBtn').addEventListener('click', async () => {
+            await this.saveNewBooking(modal, false);
+        });
+
+        // Send Quote button
+        document.getElementById('sendQuoteBtn').addEventListener('click', async () => {
+            await this.saveNewBooking(modal, true);
+        });
+    }
+
+    async saveNewBooking(modal, sendQuote = false) {
+            const saveBtn = sendQuote ? document.getElementById('sendQuoteBtn') : document.getElementById('saveAsDraftBtn');
             const propertyId = document.getElementById('propertyId').value;
             const checkIn = document.getElementById('checkIn').value;
             const checkOut = document.getElementById('checkOut').value;
@@ -924,9 +1116,36 @@ class App {
                 this.showToast(`Maximum ${CONFIG.VALIDATION.MAX_GUESTS} guests allowed`, 'error');
                 return;
             }
+
+            // Calculate total
+            const perNightCost = parseFloat(document.getElementById('perNightCost').value) || 0;
+            const primaryAdultCost = parseFloat(document.getElementById('primaryAdultCost').value) || 0;
+            const extraAdultCost = parseFloat(document.getElementById('extraAdultCost').value) || 0;
+            const perKidCost = parseFloat(document.getElementById('perKidCost').value) || 0;
+            const extraAdults = Math.max(0, numAdults - 1);
+            
+            const accommodationTotal = nights * perNightCost;
+            const primaryAdultTotal = primaryAdultCost;
+            const extraAdultsTotal = extraAdults * extraAdultCost;
+            const kidsTotal = numKids * perKidCost;
+            const subtotal = accommodationTotal + primaryAdultTotal + extraAdultsTotal + kidsTotal;
+
+            const discount = parseFloat(document.getElementById('addDiscount').value) || 0;
+            const discountType = document.getElementById('addDiscountType').value;
+            const gst = parseFloat(document.getElementById('addGST').value) || 0;
+            const gstType = document.getElementById('addGSTType').value;
+            const taxWithhold = parseFloat(document.getElementById('addTaxWithhold').value) || 0;
+            const taxWithholdType = document.getElementById('addTaxWithholdType').value;
+
+            const discountAmount = discountType === 'percentage' ? (subtotal * discount / 100) : discount;
+            const afterDiscount = subtotal - discountAmount;
+            const gstAmount = gstType === 'percentage' ? (afterDiscount * gst / 100) : gst;
+            const taxWithholdAmount = taxWithholdType === 'percentage' ? (afterDiscount * taxWithhold / 100) : taxWithhold;
+            const total = afterDiscount + gstAmount - taxWithholdAmount;
             
             // Show loading state
             saveBtn.disabled = true;
+            const originalText = saveBtn.textContent;
             saveBtn.textContent = 'Saving...';
             
             const bookingData = {
@@ -942,10 +1161,17 @@ class App {
                 check_out_date: checkOut,
                 num_adults: numAdults,
                 num_kids: numKids,
-                per_night_cost: parseFloat(document.getElementById('perNightCost').value) || 0,
-                per_adult_cost: parseFloat(document.getElementById('primaryAdultCost').value) || 0,
-                extra_adult_cost: parseFloat(document.getElementById('extraAdultCost').value) || 0,
-                per_kid_cost: parseFloat(document.getElementById('perKidCost').value) || 0,
+                per_night_cost: perNightCost,
+                per_adult_cost: primaryAdultCost,
+                extra_adult_cost: extraAdultCost,
+                per_kid_cost: perKidCost,
+                discount: discount,
+                discount_type: discountType,
+                gst: gst,
+                gst_type: gstType,
+                tax_withhold: taxWithhold,
+                tax_withhold_type: taxWithholdType,
+                total_amount: total,
                 message: document.getElementById('message').value,
                 csrf_token: this.csrfToken
             };
@@ -959,21 +1185,26 @@ class App {
 
                 const data = await response.json();
                 if (data.success) {
-                    modal.remove();
-                    this.showToast('Booking created successfully!', 'success');
-                    this.loadPage('home');
-                    this.loadNotifications();
+                    if (sendQuote) {
+                        modal.remove();
+                        // Show delivery method selection with the newly created booking ID
+                        await this.showInvoiceDeliveryModal(data.booking_id);
+                    } else {
+                        modal.remove();
+                        this.showToast('Booking created successfully!', 'success');
+                        this.loadPage('home');
+                        this.loadNotifications();
+                    }
                 } else {
                     this.showToast(data.message || 'Error creating booking', 'error');
                     saveBtn.disabled = false;
-                    saveBtn.textContent = 'Save Booking';
+                    saveBtn.textContent = originalText;
                 }
             } catch (error) {
                 this.showToast('Connection error. Please try again.', 'error');
                 saveBtn.disabled = false;
-                saveBtn.textContent = 'Save Booking';
+                saveBtn.textContent = originalText;
             }
-        });
     }
 
     async showViewRequestModal(id) {
