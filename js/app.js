@@ -1605,10 +1605,10 @@ class App {
             document.getElementById('extraAdultDisplay').textContent = extraAdultCost.toFixed(0);
             document.getElementById('perKidDisplay').textContent = perKid.toFixed(0);
             
-            // Calculate line items
-            const primaryAdultTotal = primaryAdultCost * primaryAdults;
-            const extraAdultsTotal = extraAdultCost * extraAdultsCount;
-            const kidsTotal = perKid * kids;
+            // Calculate line items (multiply by nights)
+            const primaryAdultTotal = primaryAdultCost * primaryAdults * nights;
+            const extraAdultsTotal = extraAdultCost * extraAdultsCount * nights;
+            const kidsTotal = perKid * kids * nights;
             
             document.getElementById('calcPrimaryAdult').textContent = primaryAdultTotal.toFixed(0);
             document.getElementById('calcExtraAdults').textContent = extraAdultsTotal.toFixed(0);
