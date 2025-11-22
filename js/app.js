@@ -2089,6 +2089,18 @@ class App {
                 <div style="margin-bottom: 30px;">
                     <h3 style="color: #2c5f7d; margin-bottom: 10px;">BOOKING DETAILS</h3>
                     <table style="width: 100%; border-collapse: collapse; background: #f8f9fa;">
+                        ${booking.booking_reference ? `
+                        <tr>
+                            <td style="padding: 12px; border: 1px solid #dee2e6;"><strong>Booking Reference:</strong></td>
+                            <td style="padding: 12px; border: 1px solid #dee2e6;">${booking.booking_reference}</td>
+                        </tr>
+                        ` : ''}
+                        ${booking.partner_name ? `
+                        <tr>
+                            <td style="padding: 12px; border: 1px solid #dee2e6;"><strong>Partner:</strong></td>
+                            <td style="padding: 12px; border: 1px solid #dee2e6;">${booking.partner_name}</td>
+                        </tr>
+                        ` : ''}
                         ${booking.property_name ? `
                         <tr>
                             <td style="padding: 12px; border: 1px solid #dee2e6;"><strong>Property:</strong></td>
@@ -2097,11 +2109,11 @@ class App {
                         ` : ''}
                         <tr>
                             <td style="padding: 12px; border: 1px solid #dee2e6;"><strong>Check-in:</strong></td>
-                            <td style="padding: 12px; border: 1px solid #dee2e6;">${checkInDate.toLocaleDateString('en-IN', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })} at 2:00 PM</td>
+                            <td style="padding: 12px; border: 1px solid #dee2e6;">${checkInDate.toLocaleDateString('en-IN', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })} at 1:00 PM</td>
                         </tr>
                         <tr>
                             <td style="padding: 12px; border: 1px solid #dee2e6;"><strong>Check-out:</strong></td>
-                            <td style="padding: 12px; border: 1px solid #dee2e6;">${checkOutDate.toLocaleDateString('en-IN', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })} at 11:00 AM</td>
+                            <td style="padding: 12px; border: 1px solid #dee2e6;">${checkOutDate.toLocaleDateString('en-IN', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })} at 10:00 AM</td>
                         </tr>
                         <tr>
                             <td style="padding: 12px; border: 1px solid #dee2e6;"><strong>Duration:</strong></td>
