@@ -377,7 +377,7 @@ if ($method === 'POST' && $action === 'update') {
             $bookingInfo = $bookingStmt->fetch(PDO::FETCH_ASSOC);
             
             // Check if notification already exists
-            $notifCheck = $db->prepare("SELECT id FROM notifications WHERE booking_id = ? AND type = 'pending_payment' AND is_read = 0");
+            $notifCheck = $db->prepare("SELECT id FROM notifications WHERE booking_id = ? AND type = 'pending_payment' AND `read` = 0");
             $notifCheck->execute([$id]);
             
             if (!$notifCheck->fetch() && $bookingInfo) {
