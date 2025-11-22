@@ -409,9 +409,10 @@ class App {
                 </div>
 
                 <div class="card">
-                    <div class="card-header">
-                        <h2 class="card-title">Pending Requests</h2>
-                        <button class="btn btn-primary" id="addBookingBtn">+ Add Booking</button>
+                    <div class="card-header" style="flex-wrap: wrap;">
+                        <h2 class="card-title" style="width: 100%;">Pending Requests</h2>
+                        <p class="text-secondary" style="width: 100%; margin: 0.25rem 0 0 0; font-size: 0.85rem; font-weight: 400;">New inquiries and draft bookings awaiting confirmation or quotes</p>
+                        <button class="btn btn-primary" id="addBookingBtn" style="position: absolute; right: 1rem; top: 1rem;">+ Add Booking</button>
                     </div>
                     ${pendingRequests.length === 0 ? 
                         '<p class="text-secondary">No pending requests</p>' : 
@@ -420,8 +421,9 @@ class App {
                 </div>
 
                 <div class="card">
-                    <div class="card-header">
-                        <h2 class="card-title">Pending Payments</h2>
+                    <div class="card-header" style="flex-wrap: wrap;">
+                        <h2 class="card-title" style="width: 100%;">Pending Payments</h2>
+                        <p class="text-secondary" style="width: 100%; margin: 0.25rem 0 0 0; font-size: 0.85rem; font-weight: 400;">Confirmed bookings with pending or partial payments that require follow-up</p>
                     </div>
                     ${pendingPayments.length === 0 ? 
                         '<p class="text-secondary">No pending payments</p>' : 
@@ -430,8 +432,9 @@ class App {
                 </div>
 
                 <div class="card">
-                    <div class="card-header">
-                        <h2 class="card-title">Upcoming Bookings This Month</h2>
+                    <div class="card-header" style="flex-wrap: wrap;">
+                        <h2 class="card-title" style="width: 100%;">Upcoming Bookings This Month</h2>
+                        <p class="text-secondary" style="width: 100%; margin: 0.25rem 0 0 0; font-size: 0.85rem; font-weight: 400;">Confirmed reservations with check-in dates scheduled for this month</p>
                     </div>
                     ${upcomingBookings.length === 0 ? 
                         '<p class="text-secondary">No upcoming bookings</p>' : 
