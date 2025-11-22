@@ -2504,7 +2504,7 @@ class App {
                                 ${dayLabel}
                             </div>
                             <div class="calendar-booking-info">
-                                ${parseInt(b.num_adults) + parseInt(b.num_kids)} guests
+                                (${parseInt(b.num_adults) + parseInt(b.num_kids)}) ${b.partner_name || 'Direct'}
                             </div>
                         </div>
                     `;}).join('')}
@@ -2529,7 +2529,7 @@ class App {
                                 ${dayLabel}
                             </div>
                             <div class="calendar-booking-info">
-                                ${parseInt(b.num_adults) + parseInt(b.num_kids)} guests
+                                (${parseInt(b.num_adults) + parseInt(b.num_kids)}) ${b.partner_name || 'Direct'}
                             </div>
                         </div>
                     `;}).join('')}
@@ -2554,7 +2554,7 @@ class App {
                                 ${dayLabel}
                             </div>
                             <div class="calendar-booking-info">
-                                ${parseInt(b.num_adults) + parseInt(b.num_kids)} guests
+                                (${parseInt(b.num_adults) + parseInt(b.num_kids)}) ${b.partner_name || 'Direct'}
                             </div>
                         </div>
                     `;}).join('')}
