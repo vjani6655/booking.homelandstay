@@ -329,6 +329,10 @@ if ($method === 'POST' && $action === 'update') {
         $sql .= ", gst_type = ?";
         $params[] = sanitizeInput($data['gst_type']);
     }
+    if (isset($data['gst_operation'])) {
+        $sql .= ", gst_operation = ?";
+        $params[] = sanitizeInput($data['gst_operation']);
+    }
     if (isset($data['tax_withhold'])) {
         $sql .= ", tax_withhold = ?";
         $params[] = (float)$data['tax_withhold'];

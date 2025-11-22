@@ -832,13 +832,17 @@ class App {
                             <div class="form-group">
                                 <label>GST</label>
                                 <div style="display: flex; gap: 0.5rem;">
+                                    <select id="addGSTOperation" style="width: 60px;">
+                                        <option value="add">+</option>
+                                        <option value="subtract">-</option>
+                                    </select>
                                     <input type="number" id="addGST" step="0.01" min="0" value="0" style="flex: 1;">
                                     <select id="addGSTType" style="width: 80px;">
                                         <option value="percentage">%</option>
                                         <option value="fixed">₹</option>
                                     </select>
                                 </div>
-                                <small class="text-secondary">Percentage amount</small>
+                                <small class="text-secondary">Add or subtract GST</small>
                             </div>
                         </div>
 
@@ -937,6 +941,7 @@ class App {
             const discountType = document.getElementById('addDiscountType').value;
             const gst = parseFloat(document.getElementById('addGST').value) || 0;
             const gstType = document.getElementById('addGSTType').value;
+            const gstOperation = document.getElementById('addGSTOperation').value;
             const taxWithhold = parseFloat(document.getElementById('addTaxWithhold').value) || 0;
             const taxWithholdType = document.getElementById('addTaxWithholdType').value;
 
@@ -961,9 +966,9 @@ class App {
             const extraAdults = Math.max(0, numAdults - 1);
 
             const accommodationTotal = nights * perNightCost;
-            const primaryAdultTotal = primaryAdultCost;
-            const extraAdultsTotal = extraAdults * extraAdultCost;
-            const kidsTotal = numKids * perKidCost;
+            const primaryAdultTotal = nights * primaryAdultCost;
+            const extraAdultsTotal = nights * extraAdults * extraAdultCost;
+            const kidsTotal = nights * numKids * perKidCost;
 
             const subtotal = accommodationTotal + primaryAdultTotal + extraAdultsTotal + kidsTotal;
 
@@ -981,7 +986,9 @@ class App {
                 ? (afterDiscount * taxWithhold / 100)
                 : taxWithhold;
 
-            const total = afterDiscount + gstAmount - taxWithholdAmount;
+            const total = gstOperation === 'add' 
+                ? (afterDiscount + gstAmount - taxWithholdAmount)
+                : (afterDiscount - gstAmount - taxWithholdAmount);
 
             // Update breakdown display
             const breakdownHTML = `
@@ -995,15 +1002,15 @@ class App {
                         <span>₹${accommodationTotal.toFixed(2)}</span>
                     </div>
                     <div style="display: flex; justify-content: space-between;">
-                        <span>Primary Adult (1 × ₹${primaryAdultCost.toFixed(2)}):</span>
+                        <span>Primary Adult (${nights} × ₹${primaryAdultCost.toFixed(2)}):</span>
                         <span>₹${primaryAdultTotal.toFixed(2)}</span>
                     </div>
                     <div style="display: flex; justify-content: space-between;">
-                        <span>Extra Adults (${extraAdults} × ₹${extraAdultCost.toFixed(2)}):</span>
+                        <span>Extra Adults (${nights} × ${extraAdults} × ₹${extraAdultCost.toFixed(2)}):</span>
                         <span>₹${extraAdultsTotal.toFixed(2)}</span>
                     </div>
                     <div style="display: flex; justify-content: space-between;">
-                        <span>Kids (${numKids} × ₹${perKidCost.toFixed(2)}):</span>
+                        <span>Kids (${nights} × ${numKids} × ₹${perKidCost.toFixed(2)}):</span>
                         <span>₹${kidsTotal.toFixed(2)}</span>
                     </div>
                     <div style="border-top: 1px solid var(--border); margin: 0.5rem 0; padding-top: 0.5rem;"></div>
@@ -1021,7 +1028,7 @@ class App {
                     </div>
                     <div style="display: flex; justify-content: space-between;">
                         <span>GST (${gst}${gstType === 'percentage' ? '%' : '₹'}):</span>
-                        <span>+ ₹${gstAmount.toFixed(2)}</span>
+                        <span>${gstOperation === 'add' ? '+' : '-'} ₹${gstAmount.toFixed(2)}</span>
                     </div>
                     <div style="display: flex; justify-content: space-between; color: var(--danger);">
                         <span>Tax Withhold ${taxWithhold}${taxWithholdType === 'percentage' ? '%' : '₹'}:</span>
@@ -1051,7 +1058,7 @@ class App {
         };
 
         // Add change listeners to recalculate
-        ['checkIn', 'checkOut', 'adults', 'kids', 'perNightCost', 'primaryAdultCost', 'extraAdultCost', 'perKidCost', 'addDiscount', 'addDiscountType', 'addGST', 'addGSTType', 'addTaxWithhold', 'addTaxWithholdType'].forEach(id => {
+        ['checkIn', 'checkOut', 'adults', 'kids', 'perNightCost', 'primaryAdultCost', 'extraAdultCost', 'perKidCost', 'addDiscount', 'addDiscountType', 'addGST', 'addGSTType', 'addGSTOperation', 'addTaxWithhold', 'addTaxWithholdType'].forEach(id => {
             const element = document.getElementById(id);
             if (element) {
                 element.addEventListener('change', calculateAddBookingTotal);
@@ -1125,15 +1132,16 @@ class App {
             const extraAdults = Math.max(0, numAdults - 1);
             
             const accommodationTotal = nights * perNightCost;
-            const primaryAdultTotal = primaryAdultCost;
-            const extraAdultsTotal = extraAdults * extraAdultCost;
-            const kidsTotal = numKids * perKidCost;
+            const primaryAdultTotal = nights * primaryAdultCost;
+            const extraAdultsTotal = nights * extraAdults * extraAdultCost;
+            const kidsTotal = nights * numKids * perKidCost;
             const subtotal = accommodationTotal + primaryAdultTotal + extraAdultsTotal + kidsTotal;
 
             const discount = parseFloat(document.getElementById('addDiscount').value) || 0;
             const discountType = document.getElementById('addDiscountType').value;
             const gst = parseFloat(document.getElementById('addGST').value) || 0;
             const gstType = document.getElementById('addGSTType').value;
+            const gstOperation = document.getElementById('addGSTOperation').value;
             const taxWithhold = parseFloat(document.getElementById('addTaxWithhold').value) || 0;
             const taxWithholdType = document.getElementById('addTaxWithholdType').value;
 
@@ -1141,7 +1149,9 @@ class App {
             const afterDiscount = subtotal - discountAmount;
             const gstAmount = gstType === 'percentage' ? (afterDiscount * gst / 100) : gst;
             const taxWithholdAmount = taxWithholdType === 'percentage' ? (afterDiscount * taxWithhold / 100) : taxWithhold;
-            const total = afterDiscount + gstAmount - taxWithholdAmount;
+            const total = gstOperation === 'add' 
+                ? (afterDiscount + gstAmount - taxWithholdAmount)
+                : (afterDiscount - gstAmount - taxWithholdAmount);
             
             // Show loading state
             saveBtn.disabled = true;
@@ -1169,6 +1179,7 @@ class App {
                 discount_type: discountType,
                 gst: gst,
                 gst_type: gstType,
+                gst_operation: gstOperation,
                 tax_withhold: taxWithhold,
                 tax_withhold_type: taxWithholdType,
                 total_amount: total,
