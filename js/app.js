@@ -1453,8 +1453,8 @@ class App {
                                 <strong>₹<span id="calcAfterDiscount">0</span></strong>
                             </div>
                             <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
-                                <span>GST (<span id="gstPercent">0</span>%):</span>
-                                <strong>+ ₹<span id="calcGstAmount">0</span></strong>
+                                <span>GST:</span>
+                                <strong><span id="gstSign">+</span> ₹<span id="calcGstAmount">0</span></strong>
                             </div>
                             <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem; color: var(--error);">
                                 <span>Tax Withhold <span id="taxWithholdDisplay">0%</span>:</span>
@@ -1664,12 +1664,11 @@ class App {
             let gstAmount = 0;
             if (gstType === 'percentage') {
                 gstAmount = afterDiscount * gst / 100;
-                document.getElementById('gstPercent').textContent = gst + '%';
             } else {
                 gstAmount = gst;
-                document.getElementById('gstPercent').textContent = '(Fixed)';
             }
             document.getElementById('calcGstAmount').textContent = gstAmount.toFixed(0);
+            document.getElementById('gstSign').textContent = gstOperation === 'add' ? '+' : '-';
             
             // Calculate tax withhold
             let taxWithholdAmount = 0;
@@ -2170,7 +2169,7 @@ class App {
                             ` : ''}
                             ${gst > 0 || gstAmount > 0 ? `
                             <tr>
-                                <td colspan="3" style="padding: 12px; text-align: right; border: 1px solid #dee2e6;">GST ${gstType === 'percentage' ? '(' + gst + '%)' : '(Fixed)'}:</td>
+                                <td colspan="3" style="padding: 12px; text-align: right; border: 1px solid #dee2e6;">GST:</td>
                                 <td style="padding: 12px; text-align: right; border: 1px solid #dee2e6;">${gstOperation === 'add' ? '+' : '-'} ₹${gstAmount.toFixed(0)}</td>
                             </tr>
                             ` : ''}
